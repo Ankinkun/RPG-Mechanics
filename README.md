@@ -15,7 +15,13 @@ NeoForge mod for Minecraft Java Edition **1.21.1**.
 
 ## Agent handoff
 
-Standing NeoForge rules, Git/version protocol, and feature checkpoints live in [`docs/AGENT_HANDOFF.md`](docs/AGENT_HANDOFF.md). Keybinds: [`docs/KEYBINDS.md`](docs/KEYBINDS.md).
+**Start here:** [`docs/AGENT_HANDOFF.md`](docs/AGENT_HANDOFF.md)
+
+- **Part 0** — day-one checklist for a new agent  
+- **Part 1** — NeoForge standing skill set (MC 1.21.1 / Java 21 / ModDevGradle)  
+- **Part 2** — project checkpoint (quests, keybinds, versioning)  
+
+Keybinds detail: [`docs/KEYBINDS.md`](docs/KEYBINDS.md).
 
 ## Development
 

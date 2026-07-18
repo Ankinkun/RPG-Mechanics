@@ -1,9 +1,46 @@
-# Agent Handoff — NeoForge Standing Instructions & RPG Mechanics Quest Checkpoint
+# Agent Handoff — RPG Mechanics (NeoForge 1.21.1)
 
-This document has two parts:
+**Read this file fully before editing.** It is the standing contract between agents.
 
-- **Part 1** — Production standing instructions for any agent working on this NeoForge modpack project.
-- **Part 2** — Quest-system checkpoint specific to **RPG Mechanics** (`rpgmechanics`) at the time of writing.
+| Part | Contents |
+|------|----------|
+| **Part 0** | Day-one onboarding (new agent checklist) |
+| **Part 1** | NeoForge standing skill set & engineering rules |
+| **Part 2** | Project checkpoint — what exists, locks, next work |
+
+Related docs: [`KEYBINDS.md`](KEYBINDS.md) · GitHub: https://github.com/Ankinkun/RPG-Mechanics
+
+---
+
+# PART 0 — Day-One Onboarding (New Agent)
+
+Do this before writing code:
+
+1. **Open the project** at `A:\Orga\RPG modpack\The Project` (Windows / PowerShell).
+2. **Read Part 1 + Part 2** of this file (and `docs/KEYBINDS.md` if touching controls).
+3. **Git**
+   ```powershell
+   git remote -v
+   git status
+   git log -5 --oneline
+   git tag -l "v0.1.*"
+   ```
+   Remote must be `https://github.com/Ankinkun/RPG-Mechanics.git`, branch `main`.
+4. **Versions** — confirm in `gradle.properties`:
+   - `minecraft_version=1.21.1`
+   - `neo_version=21.1.235`
+   - `mod_version=0.1.1` (bump before every pack jar — see §23)
+5. **Compile**
+   ```powershell
+   .\gradlew.bat compileJava
+   ```
+6. **Map the code** — two feature domains:
+   - `quest/` — pack-owned quests, book, editor, criterion bridge
+   - `keybind/` — client keybind profile UI + input engine
+7. **Do not restart architecture.** Extend existing modules; ask before large redesigns.
+8. **Do not commit/push** unless the user asks. Every user-facing build → new `mod_version` + jar `rpgmechanics-{version}.jar`.
+
+Copy-paste kickoff for chat is at the **end of Part 2**.
 
 ---
 
@@ -781,11 +818,12 @@ You **must not**:
 
 ---
 
-# PART 2 — Quest System Checkpoint (RPG Mechanics)
+# PART 2 — Project Checkpoint (RPG Mechanics)
 
 **Checkpoint date:** 2026-07-18  
-**Status:** Core quest loop + authoring editor are in place and compiling. Keybind system exists (`docs/KEYBINDS.md`); Controlling is NeoForge-discouraged. Live I18n for keybind/category labels. **Git remote live** — continue polish/fixes; **do not restart architecture.**  
-**Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git — current tag `v0.1.1`
+**Mod version:** `0.1.1` (tag `v0.1.1`)  
+**Status:** Quests + keybinds ship and compile. Controlling is NeoForge-**discouraged** (UI fight). Keybind/category labels resolve live via `I18n`. Continue polish; **do not restart architecture.**  
+**Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git
 
 ---
 
@@ -801,68 +839,101 @@ You **must not**:
 | **Author** | ankin |
 | **Package** | `com.ankin.rpgmechanics` |
 | **Minecraft** | 1.21.1 |
-| **NeoForge** | 21.1.235 |
+| **NeoForge** | 21.1.235 (`gradle.properties` → `neo_version`) |
 | **Java** | 21 |
-| **Build** | ModDevGradle (see `build.gradle`) |
-| **Version** | 0.1.1 (`gradle.properties` → `mod_version`) |
-| **Metadata template** | `src/main/templates/META-INF/neoforge.mods.toml` |
-
-Windows build:
+| **Build** | ModDevGradle (`build.gradle`) |
+| **Version** | `0.1.1` (`gradle.properties` → `mod_version`) |
+| **Metadata** | `src/main/templates/META-INF/neoforge.mods.toml` |
+| **Mixins** | `src/main/resources/rpgmechanics.mixins.json` |
 
 ```powershell
 cd "A:\Orga\RPG modpack\The Project"
 .\gradlew.bat compileJava
+.\gradlew.bat build          # → build/libs/rpgmechanics-{mod_version}.jar
 .\gradlew.bat runClient
 ```
 
-If `createMinecraftArtifacts` fails with a locked jar, a leftover `runClient`/`runServer` Java process is holding `build/moddev/artifacts/neoforge-*.jar` — stop it, then rebuild.
+If `createMinecraftArtifacts` fails with a locked jar, a leftover `runClient`/`runServer` Java process is holding `build/moddev/artifacts/neoforge-*.jar` — kill it, then rebuild.
+
+**Modpack note:** Arcadias Legacy (and similar) should use NeoForge **≥ 21.1.235** to match this mod. Older NeoForge (e.g. 21.1.234) fails dependency resolution. Packs on 21.1.238+ may break *other* mods (End Remastered duplicate registry, SLM config-before-load) — those are **not** RPG Mechanics bugs.
 
 ---
 
-## Locked Quest Rules (Do Not Violate)
+## What Has Been Built (Summary)
+
+### A. Quest system (server + client)
+
+Pack-owned quest definitions (JAR datapack + optional authoring export). Per-player progress via attachment. Vanilla advancement **Criterion** JSON drives progress through a mixin bridge. In-game quest book (`J`), HUD for tracked quest, advancement-style toasts, OP/dev editor when authoring is on.
+
+### B. Keybind system (client-only)
+
+Replaces vanilla Key Binds screen with `RpgKeybindsScreen`. Profile JSON under `config/rpgmechanics/keybinds/`. Primary + secondary chords, trigger modes (Press / Hold 500ms / Double Tap / Release), Escape = unbind slot, authoring taxonomy (categories / hide) gated by client config. Labels from live `I18n` (mod lang files). See `docs/KEYBINDS.md`.
+
+### C. Version control
+
+GitHub repo live. Agents bump `mod_version` for every pack jar, tag `vX.Y.Z`, update this Part 2. Rules in Part 1 §23.
+
+---
+
+## Locked Rules (Do Not Violate)
+
+### Quests
 
 1. **Pack-owned definitions** — JAR + datapacks. Player progress is per-player attachment only.
-2. **`questAuthoringMode` defaults `false`** — editor/export overlay off in shipped pack. Dev enables in `config/rpgmechanics-server.toml`.
+2. **`questAuthoringMode` defaults `false`** — editor/export off in shipped pack (`config/rpgmechanics-server.toml`).
 3. **Authoring export** — `config/rpgmechanics/quest_export/` overlays live registry when authoring is on.
-4. **No player quest book item** — open journal with keybind **`J`**.
+4. **No player quest book item** — journal keybind **`J`**.
 5. **`rpgmechanics:quest_editor`** — ops/devs only.
-6. **Book:** LMB details, **RMB track/untrack**, one tracked quest. Hint text: `Right Click: Track` (no Track button).
-7. **Vanilla-feeling UI** — restrained Minecraft widgets; opaque overlays (no see-through menus).
-8. **Progress** — vanilla Criterion JSON + `SimpleCriterionTriggerMixin` → `QuestCriterionBridge`. No custom polling.
-9. **Criterion JSON must use `RegistryOps`** — plain `JsonOps` strips item/block predicates to `{}` / empty arrays. Always encode/decode criteria with server/client `registryAccess()`.
+6. **Book:** LMB details, **RMB track/untrack**, one tracked quest. Hint: `Right Click: Track` (no Track button).
+7. **Vanilla-feeling UI** — restrained widgets; opaque overlays.
+8. **Progress** — vanilla Criterion JSON + `SimpleCriterionTriggerMixin` → `QuestCriterionBridge`. No custom polling loops.
+9. **Criterion JSON must use `RegistryOps`** — plain `JsonOps` strips item/block predicates to `{}` / `[]`. Always encode/decode with `registryAccess()`.
+10. **`repeatable`** on `QuestDefinition` (default `false` = permanent). Dismiss completed: permanent keeps history; repeatable can restart. See `PlayerQuestState` / book dismiss payload.
+
+### Keybinds
+
+1. **Authoring UI** only when `keybinds.keybindAuthoringMode=true` in **client** config — **not** auto-enabled in `runClient` / non-production.
+2. **Controlling** is `discouraged` in `neoforge.mods.toml` — launch warning; remove Controlling for our menu to win cleanly (`NewKeyBindsScreen` also listens to `ScreenEvent.Opening`).
+3. **Escape while binding** unbinds that slot (empty chords) — does **not** restore default. Reset restores `defaultKey`.
+4. **Display names** — resolve live via `KeybindCatalog` / `I18n`; do not trust baked JSON `title` alone (early seed often wrote raw ids).
+5. Seeded `pack_defaults.json` lists every `KeyMapping`; profile entries with `enabled=true` are **managed** by `KeybindInputEngine` (vanilla key unbound + synthesized). Be careful changing `BindingOverride.isManaged()`.
+
+### Process
+
+1. **No silent MC/Neo/Java bumps.**
+2. **Never invent APIs.**
+3. **Every pack build → new `mod_version`.**
+4. **Commit/push only when user asks.**
 
 ---
 
-## Current Behavior (Important)
+## Quest System Detail
+
+### Current behavior
 
 | Topic | Behavior |
 |-------|----------|
-| **Accept** | `/rpgmechanics quest accept <id>` (OP) adds quest to player. Empty book copy says accept a quest to begin. |
-| **Initiation via criteria** | Unaccepted quests only match **step index 0**. Later steps cannot start a quest (`QuestManager.progress(..., matchedStepIndex)` hard-guards this). |
-| **Completion** | Advancing past last step → complete + toast. |
-| **Track** | RMB on book list entry (list overrides right-click; vanilla lists often ignore non-LMB). |
-| **Book detail** | Shows title/icon/desc + **current objective only** (no full step list / spoilers). |
-| **Detection methods (editor)** | Curated only: **Biome** (`location`), **Item** (`inventory_changed`), **Place Block** (`placed_block`), **Kill Entity** (`player_killed_entity`). See `DetectionMethods.java`. |
-| **Editor Save** | **Save commits current step form then saves quest** (Apply Step removed). Step IDs must be unique. Dirty-flag confirm on Back/close. |
-| **Icons** | Optional `icon` on `QuestDefinition`. Pick opens **opaque modal** + `IconGridBrowser` (grid, not text list). Custom PNGs: `config/rpgmechanics/quest_icons/`. |
-| **Toasts** | Advancement-styled via `ShowQuestToastPayload` + `QuestToastHelper` (started / updated / complete). |
+| **Accept** | `/rpgmechanics quest accept <id>` (OP). Empty book says accept to begin. |
+| **Initiation via criteria** | Unaccepted quests only match **step index 0**. |
+| **Completion** | Past last step → complete + toast. |
+| **Dismiss completed** | Removes from book UI; permanent keeps completion history; repeatable can re-accept. |
+| **Track** | RMB on book list (list overrides right-click). |
+| **Book detail** | Current objective only (no spoiler step list). |
+| **Detection (editor)** | Curated: Biome / Item / Place Block / Kill Entity (`DetectionMethods`). |
+| **Editor Save** | Commits current step form then saves quest. Unique step ids. Dirty confirm on Back/close. |
+| **Icons** | Optional on definition; opaque modal + `IconGridBrowser`. Custom PNGs: `config/rpgmechanics/quest_icons/`. |
+| **Toasts** | `ShowQuestToastPayload` + `QuestToastHelper`. |
 
----
-
-## What Works
+### What works
 
 | Area | Notes |
 |------|--------|
 | Datapack load | `QuestReloadListener` → `data/.../rpgmechanics/quests/*.json` |
-| Authoring overlay | `QuestAuthoringIO` + `RegistryOps`; re-load on `ServerStartedEvent` when authoring on |
+| Authoring overlay | `QuestAuthoringIO` + `RegistryOps`; reload on `ServerStartedEvent` when authoring on |
 | Welcome quest | `welcome.json` (dirt → stick) |
 | Attachments | `ModAttachments.PLAYER_QUESTS` + `copyOnDeath()` |
 | Sync | Login / respawn / reload / save |
-| Book `J` | `QuestBookScreen` — wrapped empty text |
-| HUD | Tracked quest + icon + current objective |
-| Editor | List → Create/Edit; icon modal; curated detection; Save merges step commit |
-| Mixin bridge | `SimpleCriterionTriggerMixin` |
-| Commands | `list`, `accept`, `advance`, `reload`, `export`, `editor` |
+| Book / HUD / Editor / Mixin / Commands | All in place |
 
 ### Commands (`/rpgmechanics quest …`)
 
@@ -875,79 +946,7 @@ If `createMinecraftArtifacts` fails with a locked jar, a leftover `runClient`/`r
 | `export` | OP 2+ | Print export path |
 | `editor` | OP 2+ | Open editor if authoring enabled |
 
----
-
-## Key File Tree
-
-```
-com/ankin/rpgmechanics/
-├── RpgMechanics.java
-├── client/RpgMechanicsClient.java
-├── config/RpgMechanicsConfig.java
-├── mixin/SimpleCriterionTriggerMixin.java
-├── registry/{ModAttachments,ModCreativeTabs,ModItems}.java
-└── quest/
-    ├── QuestAuthoringIO.java          # MUST use RegistryOps for criterion JSON
-    ├── QuestCommands.java
-    ├── QuestCriterionBridge.java      # step0-only for unaccepted
-    ├── QuestDefinition.java           # optional icon field
-    ├── QuestEvents.java               # reload, commands, login, ServerStarted overlay reload
-    ├── QuestManager.java              # progress(player, id, matchedStepIndex)
-    ├── QuestPermissions.java
-    ├── QuestProgressEvent.java        # INITIATED / STEP_COMPLETED / COMPLETED
-    ├── QuestRegistry.java
-    ├── QuestReloadListener.java       # RegistryOps when server present
-    ├── QuestStep.java
-    ├── QuestSync.java
-    ├── PlayerQuestState.java
-    ├── client/
-    │   ├── ClientQuestCache.java
-    │   ├── CriterionConditionTemplates.java   # 4 curated examples
-    │   ├── DetectionMethods.java              # Biome/Item/Place/Kill
-    │   ├── IconGridBrowser.java               # large icon grid picker
-    │   ├── QuestBookScreen.java
-    │   ├── QuestEditorScreen.java             # list/edit + icon modal + dirty Save
-    │   ├── QuestHudOverlay.java
-    │   ├── QuestIcons.java
-    │   ├── QuestKeybinds.java
-    │   ├── QuestToastHelper.java
-    │   ├── QuestClientPayloadHandlers.java
-    │   └── ScrollableDropdown.java            # opaque popup
-    ├── item/QuestEditorItem.java
-    └── network/
-        ├── ShowQuestToastPayload.java
-        ├── EditorSaveQuestPayload.java        # save(..., registryAccess())
-        ├── EditorDeleteQuestPayload.java
-        ├── OpenQuestEditorPayload.java
-        ├── RequestOpenQuestEditorPayload.java
-        ├── SyncQuestDefinitionsPayload.java
-        ├── SyncPlayerQuestStatePayload.java
-        ├── ToggleTrackQuestPayload.java
-        ├── QuestNetwork.java
-        ├── QuestClientNetworkBootstrap.java
-        └── QuestServerPayloadHandler.java
-```
-
-Resources:
-
-```
-src/main/resources/
-├── assets/rpgmechanics/lang/en_us.json
-├── assets/rpgmechanics/models/item/quest_editor.json
-├── data/rpgmechanics/rpgmechanics/quests/welcome.json
-└── rpgmechanics.mixins.json
-```
-
-Dev export example (runtime, not in git necessarily):
-
-```
-run/config/rpgmechanics/quest_export/*.json
-run/config/rpgmechanics/quest_icons/*.png   # optional custom icons
-```
-
----
-
-## Architecture (Do Not Restart)
+### Quest architecture (do not restart)
 
 ```
 Datapack JSON ──► QuestReloadListener ──► QuestRegistry
@@ -960,59 +959,151 @@ Criterion fire ──► Mixin ──► QuestCriterionBridge ──► QuestMan
         ▼ PlayerQuestState attachment + optional toast packet
 ```
 
-Editor modes: **LIST** → **EDIT form** → **ICON modal** (form widgets not created while icon modal open).
+### Quest hard-won pitfalls
+
+1. **`Criterion` + `JsonOps.INSTANCE` = empty conditions** — use `RegistryOps`.
+2. **Vanilla lists may ignore RMB** — book overrides `mouseClicked` for button == 1.
+3. **Dropdown bleed** — opaque popup after `super.render`; hide `EditBox` while expanded.
+4. **Icon picker** — separate modal widget set.
+5. **Authoring overlay** — reload on `ServerStartedEvent` with full `registryAccess()`.
+6. **Missing quest defs** — purge from player state on reload/login so deleted quests do not linger.
 
 ---
 
-## Hard-Won Pitfalls (Read Before Touching Save/Load)
+## Keybind System Detail
 
-1. **`Criterion` + `JsonOps.INSTANCE` = empty conditions** — item/block predicates become `{}` / `[]`. Use `RegistryOps.create(JsonOps.INSTANCE, registries)` for parse **and** encode (editor build, `QuestAuthoringIO`, datapack reload when server exists).
-2. **Vanilla `ObjectSelectionList` may ignore RMB** — book tracking overrides `mouseClicked` on the list for button == 1.
-3. **Dropdown bleed** — paint opaque popup after `super.render`; hide conditions `EditBox` while expanded (`visible = false`).
-4. **Icon picker** — must be a separate widget set (modal), not layered translucent over form fields.
-5. **Authoring overlay** — reloaded again on `ServerStartedEvent` with full `registryAccess()` so export folder survives world init.
+Full player-facing doc: **`docs/KEYBINDS.md`**.
 
----
+### Layout
 
-## Manual Smoke Test
+`Primary | Secondary | Trigger | Reset` (~50% name / ~50% buttons).
 
-```powershell
-cd "A:\Orga\RPG modpack\The Project"
-.\gradlew.bat compileJava
-.\gradlew.bat runClient
+| Control | Behavior |
+|---------|----------|
+| Primary / Secondary | Click to listen; Escape clears slot entirely |
+| Trigger | Press → Hold (500 ms) → Double Tap → Release |
+| Reset / Reset All | Restore pack/vanilla defaults |
+| Authoring | New Category, Reload, Hide/Show, `…` cycle category |
+
+### Config
+
+| File | Key | Default |
+|------|-----|---------|
+| `rpgmechanics-client.toml` | `keybinds.keybindAuthoringMode` | `false` |
+
+### Persistence
+
+```
+config/rpgmechanics/keybinds/
+  pack_defaults.json   # seeded with all KeyMappings + categories
+  player.json          # player overlay (wins on merge)
 ```
 
-1. Enable `questAuthoringMode=true`, restart / new world, OP.
-2. `/rpgmechanics quest editor` — Create quest, set detection + conditions, **Save** (no separate Apply). Confirm export JSON under `config/rpgmechanics/quest_export/` still has real `items`/`blocks` (not `{}`).
-3. `/rpgmechanics quest reload` — quest appears in editor list / `/list`.
-4. `/rpgmechanics quest accept <id>` — appears in book (`J`). RMB track → HUD.
-5. Complete current step criteria → toast; book shows only current objective.
-6. Stick alone on welcome should **not** start quest if not accepted and first step is dirt (step-0 guard).
+### Key packages / classes
 
-`.\gradlew.bat runServer` — no client class load on dedicated server.
+```
+keybind/
+├── KeybindCatalog.java          # all KeyMappings + I18n display helpers
+├── KeybindManager.java          # profile apply / rebind / bootstrap
+├── KeybindProfileIO.java        # load/save/seed/merge
+├── KeybindInputEngine.java      # claim keys + synthesize clicks/downs
+├── KeybindPermissions.java      # authoring gate (config only)
+├── KeybindClientEvents.java     # tick bootstrap + ScreenEvent → RpgKeybindsScreen
+├── BindingOverride / CategoryDef / KeyChord / KeyTriggerMode / KeybindProfile
+└── client/RpgKeybindsScreen.java
+mixin/client/
+├── KeyMappingMixin.java         # intercept set/click/setAll
+└── KeyMappingAccessor.java      # clickCount
+```
+
+### Keybind pitfalls
+
+1. **Controlling** also replaces Key Binds via `ScreenEvent.Opening` — remove it or expect UI fights (discouraged warning on launch).
+2. **Early seed** baked raw lang ids into `title` — UI must use `KeybindCatalog.displayCategoryString` / `displayNameString` (live `I18n`).
+3. **Managing all seeded bindings** — `isManaged()` ≈ `enabled`; empty chords = unbound but owned. Changing this affects whether vanilla `KeyMapping` path works.
+4. **Hold** needs `ClientTickEvent` (`KeybindInputEngine.tick`).
+5. **Modifiers** — `KeyModifier.NONE` must still fire while sneak/sprint held (`modifiersMatch`).
 
 ---
 
-## Next Work Priorities (Suggested)
+## Top-Level File Tree
 
-Continue inside existing modules:
+```
+com/ankin/rpgmechanics/
+├── RpgMechanics.java                 # thin @Mod
+├── client/RpgMechanicsClient.java
+├── config/RpgMechanicsConfig.java    # SERVER quests + CLIENT keybinds
+├── keybind/                          # see above
+├── mixin/
+│   ├── SimpleCriterionTriggerMixin.java
+│   └── client/KeyMapping{Mixin,Accessor}.java
+├── registry/{ModAttachments,ModCreativeTabs,ModItems}.java
+└── quest/                            # see Key File Tree historically; full tree in repo
+```
 
-1. **Playtest Save → export → world restart** — confirm criteria survive full restart with authoring on; fix any remaining RegistryOps edge cases.
-2. **Accept UX** — empty book says accept; decide if first journal step should be an explicit “accept” step vs OP command / future NPC (user leaning “accept starts quest”).
-3. **Editor layout polish** — residual spacing; step list row height; ensure Save always commits draft step before writing disk.
-4. **HUD** — wrap long titles; ensure icon + text don’t collide.
-5. **More detection methods later** — keep curated list small until requested; custom non-advancement detectors are future work.
+Resources:
+
+```
+src/main/resources/
+├── assets/rpgmechanics/lang/en_us.json
+├── assets/rpgmechanics/models/item/quest_editor.json
+├── data/rpgmechanics/rpgmechanics/quests/welcome.json
+└── rpgmechanics.mixins.json
+
+src/main/templates/META-INF/neoforge.mods.toml   # Controlling = discouraged
+```
 
 ---
 
 ## Config Reference
 
-`config/rpgmechanics-server.toml`:
+**Server** `config/rpgmechanics-server.toml`:
 
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `quests.questAuthoringMode` | `false` | In-game editor + export overlay |
 | `quests.questDevAllowlist` | `[]` | Extra names/UUIDs when authoring on (OP 2+ always) |
+
+**Client** `config/rpgmechanics-client.toml`:
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `keybinds.keybindAuthoringMode` | `false` | Category / hide taxonomy tools |
+
+---
+
+## Manual Smoke Tests
+
+### Quests
+
+```powershell
+.\gradlew.bat compileJava
+.\gradlew.bat runClient
+```
+
+1. `questAuthoringMode=true`, OP, `/rpgmechanics quest editor` — Create, Save; export JSON must keep real `items`/`blocks`.
+2. `/rpgmechanics quest reload` → accept → book `J` → RMB track → HUD.
+3. Complete step → toast; book shows current objective only.
+4. Stick alone must **not** start welcome if step 0 is dirt (step-0 guard).
+5. `.\gradlew.bat runServer` — no client class load.
+
+### Keybinds
+
+1. Without Controlling: Options → Controls → Key Binds → RPG Mechanics screen.
+2. Rebind primary; Escape → `---`; Reset restores default.
+3. Labels readable (not raw `key.categories.*` when lang exists).
+4. With `keybindAuthoringMode=true`: Hide/Show + New Category appear; with `false`: they do not (even in `runClient`).
+
+---
+
+## Next Work Priorities (Suggested)
+
+1. **Keybind UI vs Controlling** — pack should remove Controlling, or raise our `ScreenEvent` priority / replace `NewKeyBindsScreen` by class name.
+2. **Keybind ownership model** — consider managing only customized binds so unedited keys stay on vanilla path (perf/compat); test thoroughly if changing `isManaged()`.
+3. **Quest Save → export → world restart** — RegistryOps persistence playtest.
+4. **Accept UX** — explicit accept in book vs OP-only today.
+5. **Editor/HUD polish** — spacing, long title wrap.
+6. **More detection methods** — only when user asks; keep curated list small.
 
 ---
 
@@ -1021,22 +1112,32 @@ Continue inside existing modules:
 ```
 You are continuing RPG Mechanics (NeoForge, MC 1.21.1).
 
-Read docs/AGENT_HANDOFF.md fully — Part 1 = NeoForge standing rules + Git/version handoff (§23); Part 2 = quest checkpoint.
+Read docs/AGENT_HANDOFF.md fully:
+- Part 0 = day-one checklist
+- Part 1 = NeoForge standing skill set + Git/version (§23)
+- Part 2 = project checkpoint (quests + keybinds)
+Also read docs/KEYBINDS.md if touching controls.
 
-Git: https://github.com/Ankinkun/RPG-Mechanics.git (branch main). Version source of truth: gradle.properties mod_version.
-Do not commit/push unless the user asks. On release: bump mod_version, tag vX.Y.Z, update Part 2.
+Git: https://github.com/Ankinkun/RPG-Mechanics.git (branch main).
+Version source of truth: gradle.properties mod_version (currently 0.1.1 / tag v0.1.1).
+Every pack jar: bump mod_version → build → rpgmechanics-{version}.jar → tag vX.Y.Z.
+Do not commit/push unless the user asks. Never invent APIs. Do not restart architecture.
 
 Project: A:\Orga\RPG modpack\The Project
-Mod: rpgmechanics / com.ankin.rpgmechanics / NeoForge 21.1.235 / Java 21 / 0.1.1
+Mod: rpgmechanics / com.ankin.rpgmechanics / NeoForge 21.1.235 / Java 21
 
-Locked: pack-owned defs; authoring default off; export config/rpgmechanics/quest_export/; J opens book; RMB track; vanilla Criterion + mixin; RegistryOps for all criterion JSON; do NOT restart quest architecture.
+Quests (locked): pack-owned defs; authoring default off; export config/rpgmechanics/quest_export/;
+J opens book; RMB track; Criterion + mixin; RegistryOps for criteria; step0-only initiate;
+repeatable flag; dismiss completed; do NOT restart quest architecture.
 
-Also in progress: client keybind system (docs/KEYBINDS.md). Controlling is NeoForge-discouraged (UI conflict). Keybind/category labels resolve live via I18n.
+Keybinds (client): RpgKeybindsScreen; pack_defaults+player JSON; primary/secondary/trigger/reset;
+Escape unbinds; authoring only if keybindAuthoringMode=true; live I18n labels;
+Controlling is NeoForge-discouraged — remove it for clean menu. See docs/KEYBINDS.md.
 
-Working: book (current step only), HUD, toasts, curated detection (Biome/Item/Place/Kill), icon grid modal, Save commits step+quest, unique step ids, dirty confirm, step0-only initiate for unaccepted, authoring reload on server start.
+Working: quest book/HUD/toasts/editor/curated detection; keybind profile+engine+seed+I18n.
 
-Next: playtest criterion persistence across restart; keybind menu vs Controlling; accept-flow UX. Use .\gradlew.bat compileJava / runClient. Never invent APIs.
-Every pack build: bump mod_version first, then build → rpgmechanics-{version}.jar, tag vX.Y.Z.
+Next (pick with user): Controlling conflict; keybind manage-only-customized; quest restart persistence;
+accept UX. Use .\gradlew.bat compileJava / build / runClient.
 ```
 
 ---
