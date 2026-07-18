@@ -780,9 +780,9 @@ You **must not**:
 
 # PART 2 — Quest System Checkpoint (RPG Mechanics)
 
-**Checkpoint date:** 2026-07-17  
-**Status:** Core quest loop + authoring editor are in place and compiling. User confirmed UI is “going in the right direction.” Continue polish/fixes; **do not restart architecture.**
-
+**Checkpoint date:** 2026-07-18  
+**Status:** Core quest loop + authoring editor are in place and compiling. Keybind system exists (`docs/KEYBINDS.md`); Controlling is NeoForge-discouraged. **Git remote live** — continue polish/fixes; **do not restart architecture.**  
+**Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git — baseline tag `v0.1.0`
 ---
 
 ## Project Identity
