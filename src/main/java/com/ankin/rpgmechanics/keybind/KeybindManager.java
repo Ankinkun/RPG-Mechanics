@@ -215,22 +215,65 @@ public final class KeybindManager {
     }
 
     public static Optional<String> resolveDisplayCategory(KeyMapping mapping) {
+        Optional<String> categoryId = resolveCategoryId(mapping);
+        if (categoryId.isEmpty()) {
+            return Optional.empty();
+        }
+        String id = categoryId.get();
+        Optional<CategoryDef> def = profile.findCategory(id);
+        return Optional.of(KeybindCatalog.displayCategoryString(id, def.map(CategoryDef::title).orElse(null)));
+    }
+
+    /**
+     * Stable category id for a binding (customCategory, profile entries membership, or vanilla category).
+     */
+    public static Optional<String> resolveCategoryId(KeyMapping mapping) {
         Optional<BindingOverride> override = profile.getBinding(mapping.getName());
         if (override.isPresent() && override.get().customCategory().isPresent()) {
-            String id = override.get().customCategory().get();
-            Optional<CategoryDef> def = profile.findCategory(id);
-            return Optional.of(KeybindCatalog.displayCategoryString(id, def.map(CategoryDef::title).orElse(null)));
+            return override.get().customCategory();
         }
         for (CategoryDef category : profile.categories()) {
             if (category.entries().contains(mapping.getName())) {
-                return Optional.of(KeybindCatalog.displayCategoryString(category));
+                return Optional.of(category.id());
             }
         }
         String vanillaCategory = mapping.getCategory();
         if (vanillaCategory != null && !vanillaCategory.isBlank()) {
-            return Optional.of(KeybindCatalog.displayCategoryString(vanillaCategory, null));
+            return Optional.of(vanillaCategory);
         }
         return Optional.empty();
+    }
+
+    /**
+     * Sort index for UI: order of categories in the profile JSON list, then entry order inside that category.
+     * Unknown categories / bindings sort after known ones.
+     */
+    public static int categoryOrderIndex(KeyMapping mapping) {
+        Optional<String> categoryId = resolveCategoryId(mapping);
+        if (categoryId.isEmpty()) {
+            return Integer.MAX_VALUE - 1;
+        }
+        java.util.List<CategoryDef> categories = profile.categories();
+        for (int i = 0; i < categories.size(); i++) {
+            if (categories.get(i).id().equals(categoryId.get())) {
+                return i;
+            }
+        }
+        // Category id known from vanilla/customCategory but not listed in JSON — after listed categories.
+        return categories.size();
+    }
+
+    public static int bindingOrderIndex(KeyMapping mapping) {
+        Optional<String> categoryId = resolveCategoryId(mapping);
+        if (categoryId.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+        Optional<CategoryDef> def = profile.findCategory(categoryId.get());
+        if (def.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+        int index = def.get().entries().indexOf(mapping.getName());
+        return index >= 0 ? index : Integer.MAX_VALUE;
     }
 
     public static boolean isVisible(KeyMapping mapping) {

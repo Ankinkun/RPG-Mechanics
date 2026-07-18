@@ -29,7 +29,7 @@ Do this before writing code:
 4. **Versions** — confirm in `gradle.properties`:
    - `minecraft_version=1.21.1`
    - `neo_version=21.1.235`
-   - `mod_version=0.1.1` (bump before every pack jar — see §23)
+   - `mod_version=0.1.2` (bump before every pack jar — see §23)
 5. **Compile**
    ```powershell
    .\gradlew.bat compileJava
@@ -821,8 +821,8 @@ You **must not**:
 # PART 2 — Project Checkpoint (RPG Mechanics)
 
 **Checkpoint date:** 2026-07-18  
-**Mod version:** `0.1.1` (tag `v0.1.1`)  
-**Status:** Quests + keybinds ship and compile. Controlling is NeoForge-**discouraged** (UI fight). Keybind/category labels resolve live via `I18n`. Continue polish; **do not restart architecture.**  
+**Mod version:** `0.1.2` (tag `v0.1.2`)  
+**Status:** Quests + keybinds ship and compile. Category UI order follows profile JSON list. Controlling is NeoForge-**discouraged** (UI fight). Keybind/category labels resolve live via `I18n`. Continue polish; **do not restart architecture.**  
 **Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git
 
 ---
@@ -842,7 +842,7 @@ You **must not**:
 | **NeoForge** | 21.1.235 (`gradle.properties` → `neo_version`) |
 | **Java** | 21 |
 | **Build** | ModDevGradle (`build.gradle`) |
-| **Version** | `0.1.1` (`gradle.properties` → `mod_version`) |
+| **Version** | `0.1.2` (`gradle.properties` → `mod_version`) |
 | **Metadata** | `src/main/templates/META-INF/neoforge.mods.toml` |
 | **Mixins** | `src/main/resources/rpgmechanics.mixins.json` |
 
@@ -1119,7 +1119,7 @@ Read docs/AGENT_HANDOFF.md fully:
 Also read docs/KEYBINDS.md if touching controls.
 
 Git: https://github.com/Ankinkun/RPG-Mechanics.git (branch main).
-Version source of truth: gradle.properties mod_version (currently 0.1.1 / tag v0.1.1).
+Version source of truth: gradle.properties mod_version (currently 0.1.2 / tag v0.1.2).
 Every pack jar: bump mod_version → build → rpgmechanics-{version}.jar → tag vX.Y.Z.
 Do not commit/push unless the user asks. Never invent APIs. Do not restart architecture.
 

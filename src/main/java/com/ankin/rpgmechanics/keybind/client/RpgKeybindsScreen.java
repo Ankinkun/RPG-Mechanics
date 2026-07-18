@@ -250,8 +250,10 @@ public class RpgKeybindsScreen extends Screen {
         private void reload(String filter) {
             this.clearEntries();
             List<KeyMapping> mappings = new ArrayList<>(KeybindCatalog.all());
+            // Category order follows profile JSON list order; bindings follow that category's entries list.
             mappings.sort(Comparator
-                    .comparing((KeyMapping m) -> KeybindManager.resolveDisplayCategory(m).orElse(m.getCategory()))
+                    .comparingInt(KeybindManager::categoryOrderIndex)
+                    .thenComparingInt(KeybindManager::bindingOrderIndex)
                     .thenComparing(KeybindCatalog::displayNameString, String.CASE_INSENSITIVE_ORDER));
 
             String lastHeader = null;

@@ -28,7 +28,8 @@ Replaces vanilla **Key Binds**. Each row is ~50% action name and ~50% four butto
 
 
 
-Category headers use each binding’s category id as a lang key and resolve the label live from
+Category headers follow the order of categories in the profile JSON (`pack_defaults` / `player` merge).
+Bindings inside a category follow that category’s `entries` list. Labels still resolve live from
 vanilla/mod `assets/.../lang` files (via `I18n`). Custom pack categories fall back to their stored title.
 
 
