@@ -1,0 +1,40 @@
+package com.ankin.rpgmechanics.client;
+
+import com.ankin.rpgmechanics.RpgMechanics;
+import com.ankin.rpgmechanics.quest.client.QuestHudOverlay;
+import com.ankin.rpgmechanics.quest.client.QuestKeybinds;
+
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+
+@Mod(value = RpgMechanics.MOD_ID, dist = Dist.CLIENT)
+public class RpgMechanicsClient {
+    public RpgMechanicsClient(IEventBus modEventBus, ModContainer container) {
+        modEventBus.addListener(this::onClientSetup);
+        modEventBus.addListener(this::onRegisterKeys);
+        modEventBus.addListener(this::onRegisterGuiLayers);
+    }
+
+    private void onClientSetup(FMLClientSetupEvent event) {
+        RpgMechanics.LOGGER.info("RPG Mechanics client setup");
+        event.enqueueWork(() -> {
+            // Catalog may still grow as other mods finish; tick bootstrap is the authoritative init.
+            if (!com.ankin.rpgmechanics.keybind.KeybindManager.isInitialized()) {
+                com.ankin.rpgmechanics.keybind.KeybindManager.bootstrap();
+            }
+        });
+    }
+
+    private void onRegisterKeys(RegisterKeyMappingsEvent event) {
+        QuestKeybinds.registerKeys(event);
+    }
+
+    private void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
+        QuestHudOverlay.register(event);
+    }
+}

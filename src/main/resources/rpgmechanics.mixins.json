@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.ankin.rpgmechanics.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "SimpleCriterionTriggerMixin"
+  ],
+  "client": [
+    "client.KeyMappingAccessor",
+    "client.KeyMappingMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

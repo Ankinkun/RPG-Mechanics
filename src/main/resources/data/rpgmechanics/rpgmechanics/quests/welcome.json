@@ -1,0 +1,38 @@
+{
+  "id": "rpgmechanics:welcome",
+  "title": "Welcome",
+  "description": "Learn how quests work. Open the quest book with J. Right-click a quest to track it.",
+  "icon": "minecraft:writable_book",
+  "steps": [
+    {
+      "id": "get_dirt",
+      "title": "Gather Dirt",
+      "description": "Obtain Dirt in your inventory.",
+      "criterion": {
+        "trigger": "minecraft:inventory_changed",
+        "conditions": {
+          "items": [
+            {
+              "items": "minecraft:dirt"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "get_stick",
+      "title": "Get a Stick",
+      "description": "Obtain a Stick in your inventory.",
+      "criterion": {
+        "trigger": "minecraft:inventory_changed",
+        "conditions": {
+          "items": [
+            {
+              "items": "minecraft:stick"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
