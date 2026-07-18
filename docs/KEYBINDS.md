@@ -28,7 +28,8 @@ Replaces vanilla **Key Binds**. Each row is ~50% action name and ~50% four butto
 
 
 
-Category headers still show pack-defined groupings. Players cannot edit taxonomy unless authoring is on.
+Category headers use each binding’s category id as a lang key and resolve the label live from
+vanilla/mod `assets/.../lang` files (via `I18n`). Custom pack categories fall back to their stored title.
 
 
 

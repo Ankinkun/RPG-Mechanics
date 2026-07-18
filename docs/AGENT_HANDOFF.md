@@ -588,20 +588,23 @@ git push -u origin main
 
 ### 23.2 Versioning rules
 
+**Hard rule:** every jar built for the user / modpack must ship under a **new** `mod_version`. Do not rebuild and redistribute the same version number after code changes.
+
 | Action | Rule |
 |--------|------|
-| Patch (`0.1.0` → `0.1.1`) | Bugfix / small safe change; bump `mod_version` when user asks to release |
+| Patch (`0.1.0` → `0.1.1`) | Bug fix / small safe change / any buildable deliverable since last tag |
 | Minor (`0.1.x` → `0.2.0`) | New player-facing feature (quests, keybinds, etc.) |
 | Major (`0.x` → `1.0.0`) | Breaking pack/datapack/network contract — only with explicit user approval |
-| Git tags | After a release commit: `v{mod_version}` (e.g. `v0.1.0`) annotated tag |
-| Do not | Bump `mod_version` on every WIP commit; leave version bumps for release commits |
+| Git tags | After a release commit: `v{mod_version}` (e.g. `v0.1.1`) annotated tag |
+| Build artifact | `build/libs/rpgmechanics-{mod_version}.jar` |
 
-Release checklist (when user asks to cut a version):
+Release checklist (when cutting a build for the pack):
 
-1. Bump `mod_version` in `gradle.properties`
-2. Update Part 2 “Version” / copy-paste blurb in this handoff if the checkpoint changes
+1. Bump `mod_version` in `gradle.properties` (required before `build` if code changed since last version)
+2. Update Part 2 “Version” / copy-paste blurb in this handoff
 3. `.\gradlew.bat build` — Verified
-4. Commit + tag `vX.Y.Z` + push branch and tags (only if user asked to push)
+4. Commit + tag `vX.Y.Z` + push branch and tags (when user asks to push)
+5. Hand the user `build/libs/rpgmechanics-X.Y.Z.jar`
 
 ### 23.3 Commit / push discipline
 
@@ -781,8 +784,9 @@ You **must not**:
 # PART 2 — Quest System Checkpoint (RPG Mechanics)
 
 **Checkpoint date:** 2026-07-18  
-**Status:** Core quest loop + authoring editor are in place and compiling. Keybind system exists (`docs/KEYBINDS.md`); Controlling is NeoForge-discouraged. **Git remote live** — continue polish/fixes; **do not restart architecture.**  
-**Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git — baseline tag `v0.1.0`
+**Status:** Core quest loop + authoring editor are in place and compiling. Keybind system exists (`docs/KEYBINDS.md`); Controlling is NeoForge-discouraged. Live I18n for keybind/category labels. **Git remote live** — continue polish/fixes; **do not restart architecture.**  
+**Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git — current tag `v0.1.1`
+
 ---
 
 ## Project Identity
@@ -800,7 +804,7 @@ You **must not**:
 | **NeoForge** | 21.1.235 |
 | **Java** | 21 |
 | **Build** | ModDevGradle (see `build.gradle`) |
-| **Version** | 0.1.0 (`gradle.properties` → `mod_version`) |
+| **Version** | 0.1.1 (`gradle.properties` → `mod_version`) |
 | **Metadata template** | `src/main/templates/META-INF/neoforge.mods.toml` |
 
 Windows build:
@@ -1023,15 +1027,16 @@ Git: https://github.com/Ankinkun/RPG-Mechanics.git (branch main). Version source
 Do not commit/push unless the user asks. On release: bump mod_version, tag vX.Y.Z, update Part 2.
 
 Project: A:\Orga\RPG modpack\The Project
-Mod: rpgmechanics / com.ankin.rpgmechanics / NeoForge 21.1.235 / Java 21 / 0.1.0
+Mod: rpgmechanics / com.ankin.rpgmechanics / NeoForge 21.1.235 / Java 21 / 0.1.1
 
 Locked: pack-owned defs; authoring default off; export config/rpgmechanics/quest_export/; J opens book; RMB track; vanilla Criterion + mixin; RegistryOps for all criterion JSON; do NOT restart quest architecture.
 
-Also in progress: client keybind system (docs/KEYBINDS.md). Controlling is NeoForge-discouraged (UI conflict).
+Also in progress: client keybind system (docs/KEYBINDS.md). Controlling is NeoForge-discouraged (UI conflict). Keybind/category labels resolve live via I18n.
 
 Working: book (current step only), HUD, toasts, curated detection (Biome/Item/Place/Kill), icon grid modal, Save commits step+quest, unique step ids, dirty confirm, step0-only initiate for unaccepted, authoring reload on server start.
 
 Next: playtest criterion persistence across restart; keybind menu vs Controlling; accept-flow UX. Use .\gradlew.bat compileJava / runClient. Never invent APIs.
+Every pack build: bump mod_version first, then build → rpgmechanics-{version}.jar, tag vX.Y.Z.
 ```
 
 ---

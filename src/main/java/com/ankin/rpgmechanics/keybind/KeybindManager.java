@@ -218,12 +218,17 @@ public final class KeybindManager {
         Optional<BindingOverride> override = profile.getBinding(mapping.getName());
         if (override.isPresent() && override.get().customCategory().isPresent()) {
             String id = override.get().customCategory().get();
-            return profile.findCategory(id).map(CategoryDef::title).or(() -> Optional.of(id));
+            Optional<CategoryDef> def = profile.findCategory(id);
+            return Optional.of(KeybindCatalog.displayCategoryString(id, def.map(CategoryDef::title).orElse(null)));
         }
         for (CategoryDef category : profile.categories()) {
             if (category.entries().contains(mapping.getName())) {
-                return Optional.of(category.title());
+                return Optional.of(KeybindCatalog.displayCategoryString(category));
             }
+        }
+        String vanillaCategory = mapping.getCategory();
+        if (vanillaCategory != null && !vanillaCategory.isBlank()) {
+            return Optional.of(KeybindCatalog.displayCategoryString(vanillaCategory, null));
         }
         return Optional.empty();
     }

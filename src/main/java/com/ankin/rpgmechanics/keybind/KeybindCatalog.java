@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -61,12 +62,40 @@ public final class KeybindCatalog {
         return Optional.ofNullable(byName.get(name));
     }
 
+    /**
+     * Live binding label from the active language (vanilla + every mod's {@code assets/.../lang}).
+     */
     public static Component displayName(KeyMapping mapping) {
         return Component.translatable(mapping.getName());
     }
 
-    public static Component categoryName(KeyMapping mapping) {
-        return Component.translatable(mapping.getCategory());
+    public static String displayNameString(KeyMapping mapping) {
+        return translateKey(mapping.getName(), mapping.getName());
+    }
+
+    /**
+     * Live category label. Prefers translating {@code categoryId} from lang files;
+     * falls back to a stored pack title (custom categories) or the id itself.
+     */
+    public static String displayCategoryString(String categoryId, @Nullable String storedTitle) {
+        if (categoryId != null && !categoryId.isBlank() && I18n.exists(categoryId)) {
+            return I18n.get(categoryId);
+        }
+        if (storedTitle != null && !storedTitle.isBlank()) {
+            return storedTitle;
+        }
+        return categoryId == null ? "" : categoryId;
+    }
+
+    public static String displayCategoryString(CategoryDef category) {
+        return displayCategoryString(category.id(), category.title());
+    }
+
+    public static String translateKey(String key, String fallback) {
+        if (key != null && !key.isBlank() && I18n.exists(key)) {
+            return I18n.get(key);
+        }
+        return fallback == null ? key : fallback;
     }
 
     public static String currentKeyName(KeyMapping mapping) {

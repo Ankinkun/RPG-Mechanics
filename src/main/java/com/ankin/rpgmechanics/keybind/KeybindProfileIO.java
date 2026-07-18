@@ -20,7 +20,7 @@ import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 
 import net.minecraft.client.KeyMapping;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.resources.language.I18n;
 import net.neoforged.fml.loading.FMLPaths;
 
 /**
@@ -71,11 +71,18 @@ public final class KeybindProfileIO {
             return;
         }
         MergeResult merged = mergeMissingFromSeed(existing.get(), seed);
+        KeybindProfile pack = merged.profile();
+        Optional<KeybindProfile> refreshed = refreshUnresolvedCategoryTitles(pack);
+        if (refreshed.isPresent()) {
+            pack = refreshed.get();
+            merged = new MergeResult(pack, true, merged.addedCount());
+        }
         if (merged.dirty()) {
-            saveFile(path, merged.profile());
+            saveFile(path, pack);
             RpgMechanics.LOGGER.info(
-                    "Updated pack_defaults.json with {} new binding(s) / categor(ies)",
-                    merged.addedCount()
+                    "Updated pack_defaults.json with {} new binding(s) / categor(ies) (titles refreshed={})",
+                    merged.addedCount(),
+                    refreshed.isPresent()
             );
         }
     }
@@ -98,10 +105,30 @@ public final class KeybindProfileIO {
 
         List<CategoryDef> categories = new ArrayList<>();
         for (Map.Entry<String, List<String>> entry : entriesByCategory.entrySet()) {
-            String title = Component.translatable(entry.getKey()).getString();
-            categories.add(new CategoryDef(entry.getKey(), title, entry.getValue()));
+            // Keep id as the lang key; resolve display names live via I18n (do not bake unresolved keys).
+            String id = entry.getKey();
+            String title = KeybindCatalog.translateKey(id, id);
+            categories.add(new CategoryDef(id, title, entry.getValue()));
         }
         return new KeybindProfile(categories, bindings);
+    }
+
+    /**
+     * When pack category titles were baked as raw ids (lang not ready at first seed), refresh them
+     * once translations exist — without overwriting intentional custom titles.
+     */
+    public static Optional<KeybindProfile> refreshUnresolvedCategoryTitles(KeybindProfile profile) {
+        boolean dirty = false;
+        List<CategoryDef> next = new ArrayList<>();
+        for (CategoryDef category : profile.categories()) {
+            if (category.title().equals(category.id()) && I18n.exists(category.id())) {
+                next.add(category.withTitle(I18n.get(category.id())));
+                dirty = true;
+            } else {
+                next.add(category);
+            }
+        }
+        return dirty ? Optional.of(new KeybindProfile(next, profile.bindings())) : Optional.empty();
     }
 
     private static MergeResult mergeMissingFromSeed(KeybindProfile pack, KeybindProfile seed) {

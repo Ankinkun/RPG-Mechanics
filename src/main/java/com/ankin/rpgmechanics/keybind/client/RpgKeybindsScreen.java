@@ -252,7 +252,7 @@ public class RpgKeybindsScreen extends Screen {
             List<KeyMapping> mappings = new ArrayList<>(KeybindCatalog.all());
             mappings.sort(Comparator
                     .comparing((KeyMapping m) -> KeybindManager.resolveDisplayCategory(m).orElse(m.getCategory()))
-                    .thenComparing(m -> Component.translatable(m.getName()).getString(), String.CASE_INSENSITIVE_ORDER));
+                    .thenComparing(KeybindCatalog::displayNameString, String.CASE_INSENSITIVE_ORDER));
 
             String lastHeader = null;
             for (KeyMapping mapping : mappings) {
@@ -260,9 +260,9 @@ public class RpgKeybindsScreen extends Screen {
                 if (!authoring && !KeybindManager.isVisible(mapping)) {
                     continue;
                 }
-                String label = Component.translatable(mapping.getName()).getString();
+                String label = KeybindCatalog.displayNameString(mapping);
                 String category = KeybindManager.resolveDisplayCategory(mapping)
-                        .orElse(Component.translatable(mapping.getCategory()).getString());
+                        .orElse(KeybindCatalog.displayCategoryString(mapping.getCategory(), null));
                 if (filter != null && !filter.isEmpty()) {
                     String hay = (label + " " + category + " " + mapping.getName()).toLowerCase(Locale.ROOT);
                     if (!hay.contains(filter)) {
@@ -382,7 +382,7 @@ public class RpgKeybindsScreen extends Screen {
                 nameWidth = half - 58;
             }
 
-            String name = Component.translatable(this.mapping.getName()).getString();
+            String name = KeybindCatalog.displayNameString(this.mapping);
             if (!KeybindManager.isEnabled(this.mapping)) {
                 name = name + " [off]";
             }
