@@ -31,4 +31,13 @@ public final class KeybindClientEvents {
             event.setNewScreen(new RpgKeybindsScreen(event.getCurrentScreen(), minecraft.options));
         }
     }
+
+    /**
+     * Container GUIs consume the mouse-up from the right-click that opened them, so vanilla never
+     * calls {@code KeyMapping.set(mouse, false)}. Drop our synthetic use-hold on that release.
+     */
+    @SubscribeEvent
+    public static void onScreenMouseReleased(ScreenEvent.MouseButtonReleased.Pre event) {
+        KeybindInputEngine.notifyGuiMouseReleased(event.getButton());
+    }
 }

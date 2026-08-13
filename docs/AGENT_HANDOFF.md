@@ -29,7 +29,7 @@ Do this before writing code:
 4. **Versions** — confirm in `gradle.properties`:
    - `minecraft_version=1.21.1`
    - `neo_version=21.1.235`
-   - `mod_version=0.1.2` (bump before every pack jar — see §23)
+   - `mod_version=0.1.3` (bump before every pack jar — see §23)
 5. **Compile**
    ```powershell
    .\gradlew.bat compileJava
@@ -820,9 +820,9 @@ You **must not**:
 
 # PART 2 — Project Checkpoint (RPG Mechanics)
 
-**Checkpoint date:** 2026-07-18  
-**Mod version:** `0.1.2` (tag `v0.1.2`)  
-**Status:** Quests + keybinds ship and compile. Category UI order follows profile JSON list. Controlling is NeoForge-**discouraged** (UI fight). Keybind/category labels resolve live via `I18n`. Continue polish; **do not restart architecture.**  
+**Checkpoint date:** 2026-08-13  
+**Mod version:** `0.1.3` (tag `v0.1.3`)  
+**Status:** Quests + keybinds ship and compile. Managed binds resolve GUI matches (inventory hotbar 1–9). Mouse use-hold is dropped on screen open so RMB does not spam in containers. Controlling is NeoForge-**discouraged**. Continue polish; **do not restart architecture.**  
 **Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git
 
 ---
@@ -842,7 +842,7 @@ You **must not**:
 | **NeoForge** | 21.1.235 (`gradle.properties` → `neo_version`) |
 | **Java** | 21 |
 | **Build** | ModDevGradle (`build.gradle`) |
-| **Version** | `0.1.2` (`gradle.properties` → `mod_version`) |
+| **Version** | `0.1.3` (`gradle.properties` → `mod_version`) |
 | **Metadata** | `src/main/templates/META-INF/neoforge.mods.toml` |
 | **Mixins** | `src/main/resources/rpgmechanics.mixins.json` |
 
@@ -1012,7 +1012,8 @@ keybind/
 ├── BindingOverride / CategoryDef / KeyChord / KeyTriggerMode / KeybindProfile
 └── client/RpgKeybindsScreen.java
 mixin/client/
-├── KeyMappingMixin.java         # intercept set/click/setAll
+├── KeyMappingMixin.java         # intercept set/click/setAll/releaseAll
+├── KeyMappingExtensionMixin.java # isActiveAndMatches → profile chords
 └── KeyMappingAccessor.java      # clickCount
 ```
 
@@ -1023,6 +1024,8 @@ mixin/client/
 3. **Managing all seeded bindings** — `isManaged()` ≈ `enabled`; empty chords = unbound but owned. Changing this affects whether vanilla `KeyMapping` path works.
 4. **Hold** needs `ClientTickEvent` (`KeybindInputEngine.tick`).
 5. **Modifiers** — `KeyModifier.NONE` must still fire while sneak/sprint held (`modifiersMatch`).
+6. **GUI match vs unbound keys** — managed bindings set vanilla `KeyMapping.key` to `UNKNOWN` so the engine can claim physical keys. Inventory hotbar 1–9 / drop / pick / close use `isActiveAndMatches` (and some paths use `matches` / `matchesMouse`), which compare the bound key — **not** `consumeClick`. Resolve via `KeybindInputEngine.matchesManaged*` + mixins on `IKeyMappingExtension` / `KeyMapping`; do not re-bind into `MAP` or in-game synthesis double-fires.
+7. **Mouse hold across GUIs** — opening a container with right-click (`key.use`) runs `KeyMapping.releaseAll()`, then the GUI eats the mouse-up so `KeyMapping.set(mouse, false)` never fires. Do **not** restore mouse mappings in `setAll` (vanilla only resyncs KEYSYM). Drop mouse `physicalDown` / press-holds in `onReleaseAll` or RMB stays down and `startUseItem` repeats every 4 ticks.
 
 ---
 
@@ -1036,7 +1039,7 @@ com/ankin/rpgmechanics/
 ├── keybind/                          # see above
 ├── mixin/
 │   ├── SimpleCriterionTriggerMixin.java
-│   └── client/KeyMapping{Mixin,Accessor}.java
+│   └── client/KeyMapping{Mixin,Accessor,ExtensionMixin}.java
 ├── registry/{ModAttachments,ModCreativeTabs,ModItems}.java
 └── quest/                            # see Key File Tree historically; full tree in repo
 ```
@@ -1119,7 +1122,7 @@ Read docs/AGENT_HANDOFF.md fully:
 Also read docs/KEYBINDS.md if touching controls.
 
 Git: https://github.com/Ankinkun/RPG-Mechanics.git (branch main).
-Version source of truth: gradle.properties mod_version (currently 0.1.2 / tag v0.1.2).
+Version source of truth: gradle.properties mod_version (currently 0.1.3 / tag v0.1.3).
 Every pack jar: bump mod_version → build → rpgmechanics-{version}.jar → tag vX.Y.Z.
 Do not commit/push unless the user asks. Never invent APIs. Do not restart architecture.
 
@@ -1134,7 +1137,8 @@ Keybinds (client): RpgKeybindsScreen; pack_defaults+player JSON; primary/seconda
 Escape unbinds; authoring only if keybindAuthoringMode=true; live I18n labels;
 Controlling is NeoForge-discouraged — remove it for clean menu. See docs/KEYBINDS.md.
 
-Working: quest book/HUD/toasts/editor/curated detection; keybind profile+engine+seed+I18n.
+Working: quest book/HUD/toasts/editor/curated detection; keybind profile+engine+seed+I18n;
+inventory hotbar 1–9 with managed binds; RMB container open does not leave use held.
 
 Next (pick with user): Controlling conflict; keybind manage-only-customized; quest restart persistence;
 accept UX. Use .\gradlew.bat compileJava / build / runClient.

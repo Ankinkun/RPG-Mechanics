@@ -28,6 +28,8 @@ public final class KeybindInputEngine {
     private static final Map<String, List<Route>> routesByPhysicalKey = new HashMap<>();
     private static final Set<String> managedBindings = new HashSet<>();
     private static final Set<String> claimedPhysicalKeys = new HashSet<>();
+    /** binding name → physical chords (for GUI {@code matches} / {@code isActiveAndMatches}). */
+    private static final Map<String, List<MatchChord>> matchChordsByBinding = new HashMap<>();
 
     private static final Map<String, Long> lastTapMs = new HashMap<>();
     private static final Map<String, Boolean> physicalDown = new HashMap<>();
@@ -61,6 +63,7 @@ public final class KeybindInputEngine {
         routesByPhysicalKey.clear();
         managedBindings.clear();
         claimedPhysicalKeys.clear();
+        matchChordsByBinding.clear();
         lastTapMs.clear();
         physicalDown.clear();
         pressHeldBindings.clear();
@@ -100,6 +103,12 @@ public final class KeybindInputEngine {
                         routesByPhysicalKey
                                 .computeIfAbsent(physicalName, ignored -> new ArrayList<>())
                                 .add(new Route(bindingName, chord.modifier(), chord.trigger()));
+                        // GUI codepaths (inventory hotbar swap, drop, etc.) use
+                        // KeyMapping.isActiveAndMatches / matches against the bound key.
+                        // We unbind managed mappings for in-game synthesis, so keep chords here.
+                        matchChordsByBinding
+                                .computeIfAbsent(bindingName, ignored -> new ArrayList<>())
+                                .add(new MatchChord(physical, chord.modifier()));
                     });
                 }
             }
@@ -120,6 +129,10 @@ public final class KeybindInputEngine {
      */
     public static void tick() {
         if (!active || pendingHolds.isEmpty()) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft != null && minecraft.screen != null) {
             return;
         }
         long now = System.currentTimeMillis();
@@ -167,6 +180,10 @@ public final class KeybindInputEngine {
             return true;
         }
 
+        // Screens swallow mouse KeyMapping.set; do not synthesize in-game clicks/holds while a GUI is open.
+        Minecraft minecraft = Minecraft.getInstance();
+        boolean guiOpen = minecraft != null && minecraft.screen != null;
+
         for (Route route : routes) {
             String routeKey = physicalName + "|" + route.bindingName() + "|" + route.trigger().wireName();
             if (!modifiersMatch(route.modifier())) {
@@ -183,6 +200,9 @@ public final class KeybindInputEngine {
             switch (route.trigger()) {
                 case HOLD -> {
                     if (held && !wasDown) {
+                        if (guiOpen) {
+                            continue;
+                        }
                         pendingHolds.put(routeKey, new PendingHold(
                                 route.bindingName(),
                                 physicalName,
@@ -197,21 +217,23 @@ public final class KeybindInputEngine {
                 }
                 case PRESS -> {
                     if (held && !wasDown) {
-                        injectClick(mapping);
-                        setSyntheticDown(mapping, true);
-                        pressHeldBindings.add(route.bindingName());
+                        if (!guiOpen) {
+                            injectClick(mapping);
+                            setSyntheticDown(mapping, true);
+                            pressHeldBindings.add(route.bindingName());
+                        }
                     } else if (!held && wasDown) {
                         setSyntheticDown(mapping, false);
                         pressHeldBindings.remove(route.bindingName());
                     }
                 }
                 case RELEASE -> {
-                    if (!held && wasDown) {
+                    if (!held && wasDown && !guiOpen) {
                         injectClick(mapping);
                     }
                 }
                 case DOUBLE_TAP -> {
-                    if (held && !wasDown) {
+                    if (held && !wasDown && !guiOpen) {
                         long now = System.currentTimeMillis();
                         String tapKey = physicalName + "|" + route.bindingName();
                         Long previous = lastTapMs.get(tapKey);
@@ -239,7 +261,8 @@ public final class KeybindInputEngine {
     }
 
     /**
-     * Custom setAll: resync unmanaged KEYSYM holds; keep synthetic press-downs intact.
+     * Custom setAll: resync KEYSYM holds from GLFW. Vanilla {@code setAll} never restores mouse
+     * mappings — doing so re-holds {@code key.use} after opening a container with right-click.
      *
      * @return true if vanilla setAll should be cancelled
      */
@@ -261,13 +284,129 @@ public final class KeybindInputEngine {
                 mapping.setDown(InputConstants.isKeyDown(window, mapping.getKey().getValue()));
             }
         }
-        for (String bindingName : pressHeldBindings) {
-            KeyMapping mapping = KeybindCatalog.get(bindingName);
-            if (mapping != null) {
-                setSyntheticDown(mapping, true);
+        pressHeldBindings.clear();
+        for (String bindingName : managedBindings) {
+            if (resyncManagedKeysymHold(bindingName, window)) {
+                pressHeldBindings.add(bindingName);
             }
         }
         return true;
+    }
+
+    /**
+     * Vanilla calls {@link KeyMapping#releaseAll()} when a screen opens. Mouse release then goes to
+     * the GUI, not {@link KeyMapping#set}, so drop mouse hold state or {@code key.use} stays down.
+     */
+    public static void onReleaseAll() {
+        if (!active || applying) {
+            return;
+        }
+        pendingHolds.entrySet().removeIf(entry -> isMousePhysical(entry.getValue().physicalName()));
+        pressHeldBindings.removeIf(name -> !hasHeldKeysymChord(name));
+        physicalDown.keySet().removeIf(KeybindInputEngine::isMousePhysical);
+    }
+
+    /**
+     * GUI mouse-up never reaches {@link KeyMapping#set}; keep engine physical-down in sync.
+     */
+    public static void notifyGuiMouseReleased(int button) {
+        if (!active || applying) {
+            return;
+        }
+        InputConstants.Key key = InputConstants.Type.MOUSE.getOrCreate(button);
+        if (!isPhysicalKeyClaimed(key)) {
+            return;
+        }
+        handleSet(key, false);
+    }
+
+    /**
+     * Whether GUI match queries should use engine chords instead of the unbound {@link KeyMapping} key.
+     */
+    public static boolean shouldResolveGuiMatch(String bindingName) {
+        return active && managedBindings.contains(bindingName);
+    }
+
+    /**
+     * Match a pressed key against managed chords (primary + secondary).
+     *
+     * @param requireModifier when true (GUI {@code isActiveAndMatches}), chord modifiers must be active;
+     *                        when false ({@code matches}/{@code matchesMouse}), only the physical key is compared
+     */
+    public static boolean matchesManaged(String bindingName, InputConstants.Key pressed, boolean requireModifier) {
+        if (pressed == null || pressed.equals(InputConstants.UNKNOWN)) {
+            return false;
+        }
+        List<MatchChord> chords = matchChordsByBinding.get(bindingName);
+        if (chords == null || chords.isEmpty()) {
+            return false;
+        }
+        String pressedName = pressed.getName();
+        for (MatchChord chord : chords) {
+            if (!chord.physicalKey().getName().equals(pressedName)) {
+                continue;
+            }
+            if (!requireModifier || modifiersMatch(chord.modifier())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean matchesManaged(String bindingName, InputConstants.Key pressed) {
+        return matchesManaged(bindingName, pressed, true);
+    }
+
+    public static boolean matchesManagedKeysym(String bindingName, int keysym, int scancode) {
+        InputConstants.Key pressed = keysym == InputConstants.UNKNOWN.getValue()
+                ? InputConstants.Type.SCANCODE.getOrCreate(scancode)
+                : InputConstants.Type.KEYSYM.getOrCreate(keysym);
+        return matchesManaged(bindingName, pressed, false);
+    }
+
+    public static boolean matchesManagedMouse(String bindingName, int mouseButton) {
+        return matchesManaged(bindingName, InputConstants.Type.MOUSE.getOrCreate(mouseButton), false);
+    }
+
+    private static boolean resyncManagedKeysymHold(String bindingName, long window) {
+        List<MatchChord> chords = matchChordsByBinding.get(bindingName);
+        boolean down = false;
+        if (chords != null) {
+            for (MatchChord chord : chords) {
+                InputConstants.Key key = chord.physicalKey();
+                if (key.getType() != InputConstants.Type.KEYSYM) {
+                    continue;
+                }
+                if (InputConstants.isKeyDown(window, key.getValue()) && modifiersMatch(chord.modifier())) {
+                    down = true;
+                    break;
+                }
+            }
+        }
+        KeyMapping mapping = KeybindCatalog.get(bindingName);
+        if (mapping != null) {
+            setSyntheticDown(mapping, down);
+        }
+        return down;
+    }
+
+    private static boolean hasHeldKeysymChord(String bindingName) {
+        List<MatchChord> chords = matchChordsByBinding.get(bindingName);
+        if (chords == null) {
+            return false;
+        }
+        for (MatchChord chord : chords) {
+            InputConstants.Key key = chord.physicalKey();
+            if (key.getType() == InputConstants.Type.KEYSYM
+                    && physicalDown.getOrDefault(key.getName(), false)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isMousePhysical(String physicalName) {
+        return physicalName != null && physicalName.startsWith("key.mouse.");
     }
 
     private static void releaseBinding(String bindingName) {
@@ -306,6 +445,9 @@ public final class KeybindInputEngine {
     }
 
     private record Route(String bindingName, KeyModifier modifier, KeyTriggerMode trigger) {
+    }
+
+    private record MatchChord(InputConstants.Key physicalKey, KeyModifier modifier) {
     }
 
     private record PendingHold(String bindingName, String physicalName, KeyModifier modifier, long startMs) {

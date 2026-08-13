@@ -4,6 +4,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.ankin.rpgmechanics.keybind.KeybindInputEngine;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -31,5 +32,32 @@ public abstract class KeyMappingMixin {
         if (KeybindInputEngine.handleSetAll()) {
             ci.cancel();
         }
+    }
+
+    @Inject(method = "releaseAll()V", at = @At("RETURN"))
+    private static void rpgmechanics$afterReleaseAll(CallbackInfo ci) {
+        KeybindInputEngine.onReleaseAll();
+    }
+
+    /**
+     * Managed bindings are unbound on the vanilla {@code key} field so the input engine can claim
+     * physical keys. GUI code still calls {@link KeyMapping#matches} (screenshot, fullscreen, etc.).
+     */
+    @Inject(method = "matches(II)Z", at = @At("HEAD"), cancellable = true)
+    private void rpgmechanics$matchesManaged(int keysym, int scancode, CallbackInfoReturnable<Boolean> cir) {
+        KeyMapping self = (KeyMapping) (Object) this;
+        if (!KeybindInputEngine.shouldResolveGuiMatch(self.getName())) {
+            return;
+        }
+        cir.setReturnValue(KeybindInputEngine.matchesManagedKeysym(self.getName(), keysym, scancode));
+    }
+
+    @Inject(method = "matchesMouse(I)Z", at = @At("HEAD"), cancellable = true)
+    private void rpgmechanics$matchesMouseManaged(int mouseButton, CallbackInfoReturnable<Boolean> cir) {
+        KeyMapping self = (KeyMapping) (Object) this;
+        if (!KeybindInputEngine.shouldResolveGuiMatch(self.getName())) {
+            return;
+        }
+        cir.setReturnValue(KeybindInputEngine.matchesManagedMouse(self.getName(), mouseButton));
     }
 }
