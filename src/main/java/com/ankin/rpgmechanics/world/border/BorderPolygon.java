@@ -147,30 +147,52 @@ public record BorderPolygon(List<Vertex> vertices) {
      * Absolute distance to the nearest edge segment (works inside or outside).
      */
     public double distanceToEdge(double x, double z) {
+        return nearestEdgePoint(x, z).distance();
+    }
+
+    /**
+     * Closest point on any edge segment to {@code (x, z)}.
+     */
+    public EdgePoint nearestEdgePoint(double x, double z) {
         if (!isValid()) {
-            return Double.POSITIVE_INFINITY;
+            return new EdgePoint(x, z, Double.POSITIVE_INFINITY);
         }
-        double best = Double.POSITIVE_INFINITY;
+        double bestDist = Double.POSITIVE_INFINITY;
+        double bestX = x;
+        double bestZ = z;
         int count = vertices.size();
         for (int i = 0; i < count; i++) {
             Vertex a = vertices.get(i);
             Vertex b = vertices.get((i + 1) % count);
-            best = Math.min(best, distanceToSegment(x, z, a.x(), a.z(), b.x(), b.z()));
+            double[] q = closestPointOnSegment(x, z, a.x(), a.z(), b.x(), b.z());
+            double dist = Math.hypot(x - q[0], z - q[1]);
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestX = q[0];
+                bestZ = q[1];
+            }
         }
-        return best;
+        return new EdgePoint(bestX, bestZ, bestDist);
     }
 
     private static double distanceToSegment(double px, double pz, double ax, double az, double bx, double bz) {
+        double[] q = closestPointOnSegment(px, pz, ax, az, bx, bz);
+        return Math.hypot(px - q[0], pz - q[1]);
+    }
+
+    private static double[] closestPointOnSegment(double px, double pz, double ax, double az, double bx, double bz) {
         double dx = bx - ax;
         double dz = bz - az;
         if (dx == 0.0 && dz == 0.0) {
-            return Math.hypot(px - ax, pz - az);
+            return new double[] {ax, az};
         }
         double t = ((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz);
         t = Math.max(0.0, Math.min(1.0, t));
-        double qx = ax + t * dx;
-        double qz = az + t * dz;
-        return Math.hypot(px - qx, pz - qz);
+        return new double[] {ax + t * dx, az + t * dz};
+    }
+
+    /** Closest border-edge sample for aiming fog / look-direction checks. */
+    public record EdgePoint(double x, double z, double distance) {
     }
 
     public BorderPolygon withVertex(Vertex vertex) {

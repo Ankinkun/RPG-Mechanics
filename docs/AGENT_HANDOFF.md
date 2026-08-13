@@ -29,7 +29,7 @@ Do this before writing code:
 4. **Versions** — confirm in `gradle.properties`:
    - `minecraft_version=1.21.1`
    - `neo_version=21.1.235`
-   - `mod_version=0.1.4` (bump before every pack jar — see §23)
+   - `mod_version=0.1.5` (bump before every pack jar — see §23)
 5. **Compile**
    ```powershell
    .\gradlew.bat compileJava
@@ -822,8 +822,8 @@ You **must not**:
 # PART 2 — Project Checkpoint (RPG Mechanics)
 
 **Checkpoint date:** 2026-08-13  
-**Mod version:** `0.1.4` (tag `v0.1.4`) — world module v1 shipped  
-**Status:** Quests + keybinds + **world** (protection, RD-anchored fog border, Border Wand authoring). Controlling is NeoForge-**discouraged**. **Do not restart architecture.**  
+**Mod version:** `0.1.5` (tag `v0.1.5`) — Iris/Photon fogEnd border + soft shader fallback off by default  
+**Status:** Quests + keybinds + **world** (protection, RD-anchored fog border, Iris/Photon `fogEnd` path, Border Wand). Controlling is NeoForge-**discouraged**. **Do not restart architecture.**  
 **Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git
 
 ---
@@ -843,7 +843,7 @@ You **must not**:
 | **NeoForge** | 21.1.235 (`gradle.properties` → `neo_version`) |
 | **Java** | 21 |
 | **Build** | ModDevGradle (`build.gradle`) |
-| **Version** | `0.1.4` (`gradle.properties` → `mod_version`) |
+| **Version** | `0.1.5` (`gradle.properties` → `mod_version`) |
 | **Metadata** | `src/main/templates/META-INF/neoforge.mods.toml` |
 | **Mixins** | `src/main/resources/rpgmechanics.mixins.json` |
 
@@ -1057,7 +1057,7 @@ com/ankin/rpgmechanics/
 | **Protection** | SERVER `world.protectionEnabled` (default true). Cancels break/place/trample/tool-modify/fluid-place/piston/mob-grief; explosions clear block list. Bypass: `builderAllowlist` only by default (`opsBypassProtection=false` so singleplayer cheats do not unlock building). |
 | **Border** | SERVER `world.borderEnabled` (default true). Soft polygonal fog; unconfigured → vanilla-mimic square (~±29,999,984) — **no fog near spawn**. Use `setbox` or JSON for a playable border. Vanilla border size pushed to max + zero damage. |
 | **Commands** | `/rpgmechanics world protection status`; `/rpgmechanics world border reload\|info\|setbox\|addvertex\|…` (OP 2+) |
-| **Client** | Soft RD-anchored fog (`BorderFogRenderer`). Draft preview for OP (`BorderDraftRenderer`). Debug wall: `/rpgmechanics world border debugwall`. |
+| **Client** | Soft RD-anchored fog (`BorderFogRenderer`) from distance-to-edge → `fogStart`/`fogEnd`. Photon chunk-edge fog follows via `extras/shader-patches/photon`. Optional forcefield wall off by default (`CLIENT world.borderShaderFallbackWall`). Draft preview for OP. Debug wall: `/rpgmechanics world border debugwall`. |
 | **Authoring** | Border Wand item + `addvertex`/`undo`/`clear`/`save`. Draft syncs to clients. Save rejects self-intersecting / zero-area polygons. |
 
 ```
@@ -1068,7 +1068,7 @@ world/
     ├── BorderPolygon / WorldBorderDefinition / WorldBorderIO / WorldBorderState
     ├── WorldBorderEngine / WorldBorderCommands
     ├── network/{WorldNetwork,SyncWorldBorderPayload,WorldBorderSync,WorldClientNetworkBootstrap}
-    └── client/{ClientWorldBorderCache,BorderFogRenderer,BorderDraftRenderer,BorderDebugWallRenderer}
+    └── client/{ClientWorldBorderCache,BorderFogRenderer,BorderDraftRenderer,BorderDebugWallRenderer,BorderWallPainter,BorderShaderFallbackRenderer,ShaderPackCompat}
 ```
 
 Resources:
@@ -1102,6 +1102,7 @@ src/main/templates/META-INF/neoforge.mods.toml   # Controlling = discouraged
 | `world.borderSoftMargin` | `8` | Distance before damage |
 | `world.borderMaxDamagePerSecond` | `4` | Damage ramp cap |
 | `world.borderHardKillDistance` | `0` | Optional lethal distance (0=off) |
+| CLIENT `world.borderShaderFallbackWall` | `false` | Optional forcefield wall with shaders (fog preferred) |
 
 **Client** `config/rpgmechanics-client.toml`:
 
@@ -1157,7 +1158,7 @@ Read docs/AGENT_HANDOFF.md fully:
 Also read docs/KEYBINDS.md if touching controls.
 
 Git: https://github.com/Ankinkun/RPG-Mechanics.git (branch main).
-Version source of truth: gradle.properties mod_version (currently 0.1.4 / tag v0.1.4).
+Version source of truth: gradle.properties mod_version (currently 0.1.5 / tag v0.1.5).
 Every pack jar: bump mod_version → build → rpgmechanics-{version}.jar → tag vX.Y.Z.
 Do not commit/push unless the user asks. Never invent APIs. Do not restart architecture.
 
@@ -1173,12 +1174,14 @@ Escape unbinds; authoring only if keybindAuthoringMode=true; live I18n labels;
 Controlling is NeoForge-discouraged — remove it for clean menu. See docs/KEYBINDS.md.
 Inventory hotbar 1–9 + RMB container open fixed in 0.1.3.
 
-World (v1, shipped 0.1.4): protection (builderAllowlist; opsBypassProtection default false) +
+World (v1+): protection (builderAllowlist; opsBypassProtection default false) +
 RD-anchored fog border (polygon JSON or vanilla-mimic ±30M). Border Wand + draft preview.
-Commands /rpgmechanics world border … ; debugwall for striped preview.
+Iris/Photon: drive fogEnd by distance-to-edge; pack needs extras/shader-patches/photon on Photon.
+CLIENT world.borderShaderFallbackWall default false. debugwall still available.
+Commands /rpgmechanics world border … .
 Do not restart world architecture — extend world/ package.
 
-Working: quest book/HUD/toasts/editor; keybind engine; world protection+border.
+Working: quest book/HUD/toasts/editor; keybind engine; world protection+border; Photon fogEnd path.
 
 Next (pick with user): Controlling conflict; quest accept UX; optional world-space fog R&D.
 Use .\gradlew.bat compileJava / build / runClient.

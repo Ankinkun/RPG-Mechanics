@@ -108,6 +108,7 @@ public final class RpgMechanicsConfig {
 
     public static final class Client {
         public final ModConfigSpec.BooleanValue keybindAuthoringMode;
+        public final ModConfigSpec.BooleanValue borderShaderFallbackWall;
 
         private Client(ModConfigSpec.Builder builder) {
             builder.push("keybinds");
@@ -119,6 +120,16 @@ public final class RpgMechanicsConfig {
                             "Keep false in the shipped modpack."
                     )
                     .define("keybindAuthoringMode", false);
+            builder.pop();
+
+            builder.push("world");
+            borderShaderFallbackWall = builder
+                    .comment(
+                            "Optional soft forcefield wall when Iris/Oculus has a shader pack active.",
+                            "Default false — prefer distance-driven fogEnd (Photon patch in extras/shader-patches/photon).",
+                            "Manual /rpgmechanics world border debugwall still works either way."
+                    )
+                    .define("borderShaderFallbackWall", false);
             builder.pop();
         }
     }

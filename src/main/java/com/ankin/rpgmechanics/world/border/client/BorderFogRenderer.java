@@ -4,19 +4,22 @@ import com.ankin.rpgmechanics.RpgMechanics;
 import com.ankin.rpgmechanics.world.border.WorldBorderDefinition;
 import com.mojang.blaze3d.shaders.FogShape;
 
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 
 /**
- * Fakes a world-fixed fog wall using vanilla radial fog.
+ * Fakes a world-fixed fog wall using vanilla radial fog planes ({@code fogStart}/{@code fogEnd}).
  * <p>
- * Border-anchored near/far are <em>lerped</em> with the client's current RD fog planes
- * so there is no hard takeover when the edge first enters the fog horizon.
+ * Near/far are driven by distance to the nearest border edge (blended with RD fog so there is
+ * no hard jump when the edge enters view). Shader packs that honor {@code fogEnd} (or a Photon
+ * {@code border_fog} patched to use it) pick this up via Iris.
  */
 @EventBusSubscriber(modid = RpgMechanics.MOD_ID, value = Dist.CLIENT)
 public final class BorderFogRenderer {
@@ -27,7 +30,7 @@ public final class BorderFogRenderer {
     public static void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
         Minecraft minecraft = Minecraft.getInstance();
         float baseFar = minecraft.options.getEffectiveRenderDistance() * 16.0F;
-        FogPlan plan = plan(baseFar, baseFar * 0.75F);
+        FogPlan plan = plan(event.getCamera(), baseFar, baseFar * 0.75F);
         if (plan == null || plan.outsideStrength() <= 0.0F || plan.influence() <= 0.0F) {
             return;
         }
@@ -41,7 +44,7 @@ public final class BorderFogRenderer {
     public static void onRenderFog(ViewportEvent.RenderFog event) {
         float baseNear = event.getNearPlaneDistance();
         float baseFar = event.getFarPlaneDistance();
-        FogPlan plan = plan(baseFar, baseNear);
+        FogPlan plan = plan(event.getCamera(), baseFar, baseNear);
         if (plan == null || plan.influence() <= 0.001F) {
             return;
         }
@@ -50,7 +53,11 @@ public final class BorderFogRenderer {
         float targetNear = plan.fogNear();
         float targetFar = plan.fogFar();
 
-        // Always blend from the live vanilla planes — never snap-replace them.
+        // Shader packs that read fogEnd (Photon border_fog patch): commit harder to the radius.
+        if (ShaderPackCompat.isShaderPackInUse()) {
+            influence = Math.min(1.0F, influence * 1.25F);
+        }
+
         float near = lerp(baseNear, targetNear, influence);
         float far = lerp(baseFar, targetFar, influence);
         far = Math.max(near + 8.0F, far);
@@ -63,12 +70,12 @@ public final class BorderFogRenderer {
         event.setCanceled(true);
     }
 
-    private static FogPlan plan(float baseFar, float baseNear) {
+    private static FogPlan plan(Camera camera, float baseFar, float baseNear) {
         if (!ClientWorldBorderCache.isFeatureEnabled()) {
             return null;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.level == null) {
+        if (minecraft.player == null || minecraft.level == null || camera == null) {
             return null;
         }
         ResourceLocation dimension = minecraft.level.dimension().location();
@@ -77,18 +84,18 @@ public final class BorderFogRenderer {
             return null;
         }
 
-        double x = minecraft.player.getX();
-        double z = minecraft.player.getZ();
+        Vec3 cam = camera.getPosition();
+        double x = cam.x;
+        double z = cam.z;
+        var polygon = definition.polygon();
         double fogDepth = Math.max(4.0, definition.fogDepth());
-        double outside = definition.polygon().distanceOutside(x, z);
+        double outside = polygon.distanceOutside(x, z);
 
         float soft = Math.max((float) fogDepth * 1.5F, Math.min(72.0F, baseFar * 0.28F));
-        // How far inside the RD fog horizon the border must be before we fully own the planes.
         float engage = Math.max(soft, baseFar * 0.22F);
 
         if (outside > 0.0) {
             float depth = (float) Math.min(1.0, outside / Math.max(fogDepth, 1.0));
-            // Match inside-at-edge far (soft * 0.55) so crossing does not jump.
             float edgeFar = soft * 0.55F;
             float deepFar = Math.max(16.0F, soft * 0.35F);
             float fogNear = 0.0F;
@@ -96,11 +103,10 @@ public final class BorderFogRenderer {
             return new FogPlan(0.0F, fogNear, fogFar, depth, 1.0F);
         }
 
-        float borderDist = (float) definition.polygon().distanceToEdge(x, z);
+        float borderDist = (float) polygon.distanceToEdge(x, z);
         float fogNear = Math.max(0.0F, borderDist - soft);
         float fogFar = borderDist + soft * 0.55F;
 
-        // influence: 0 while border is at/beyond the fog horizon, →1 as it moves inward.
         float influence;
         if (borderDist >= baseFar) {
             influence = 0.0F;
@@ -112,7 +118,6 @@ public final class BorderFogRenderer {
             return null;
         }
 
-        // Keep targets inside the current RD fog budget before blending.
         fogNear = Mth.clamp(fogNear, 0.0F, Math.max(0.0F, baseFar - 8.0F));
         fogFar = Mth.clamp(fogFar, fogNear + 8.0F, baseFar);
 
