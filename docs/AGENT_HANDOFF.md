@@ -29,14 +29,15 @@ Do this before writing code:
 4. **Versions** — confirm in `gradle.properties`:
    - `minecraft_version=1.21.1`
    - `neo_version=21.1.235`
-   - `mod_version=0.1.3` (bump before every pack jar — see §23)
+   - `mod_version=0.1.4` (bump before every pack jar — see §23)
 5. **Compile**
    ```powershell
    .\gradlew.bat compileJava
    ```
-6. **Map the code** — two feature domains:
+6. **Map the code** — three feature domains:
    - `quest/` — pack-owned quests, book, editor, criterion bridge
    - `keybind/` — client keybind profile UI + input engine
+   - `world/` — RPG terrain protection + polygonal fog border
 7. **Do not restart architecture.** Extend existing modules; ask before large redesigns.
 8. **Do not commit/push** unless the user asks. Every user-facing build → new `mod_version` + jar `rpgmechanics-{version}.jar`.
 
@@ -821,8 +822,8 @@ You **must not**:
 # PART 2 — Project Checkpoint (RPG Mechanics)
 
 **Checkpoint date:** 2026-08-13  
-**Mod version:** `0.1.3` (tag `v0.1.3`)  
-**Status:** Quests + keybinds ship and compile. Managed binds resolve GUI matches (inventory hotbar 1–9). Mouse use-hold is dropped on screen open so RMB does not spam in containers. Controlling is NeoForge-**discouraged**. Continue polish; **do not restart architecture.**  
+**Mod version:** `0.1.4` (tag `v0.1.4`) — world module v1 shipped  
+**Status:** Quests + keybinds + **world** (protection, RD-anchored fog border, Border Wand authoring). Controlling is NeoForge-**discouraged**. **Do not restart architecture.**  
 **Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git
 
 ---
@@ -842,7 +843,7 @@ You **must not**:
 | **NeoForge** | 21.1.235 (`gradle.properties` → `neo_version`) |
 | **Java** | 21 |
 | **Build** | ModDevGradle (`build.gradle`) |
-| **Version** | `0.1.3` (`gradle.properties` → `mod_version`) |
+| **Version** | `0.1.4` (`gradle.properties` → `mod_version`) |
 | **Metadata** | `src/main/templates/META-INF/neoforge.mods.toml` |
 | **Mixins** | `src/main/resources/rpgmechanics.mixins.json` |
 
@@ -869,7 +870,11 @@ Pack-owned quest definitions (JAR datapack + optional authoring export). Per-pla
 
 Replaces vanilla Key Binds screen with `RpgKeybindsScreen`. Profile JSON under `config/rpgmechanics/keybinds/`. Primary + secondary chords, trigger modes (Press / Hold 500ms / Double Tap / Release), Escape = unbind slot, authoring taxonomy (categories / hide) gated by client config. Labels from live `I18n` (mod lang files). See `docs/KEYBINDS.md`.
 
-### C. Version control
+### C. World system (server + client fog)
+
+RPG terrain protection (break/place/grief cancelled; OP/allowlist builders). Soft polygonal fog border with vanilla-mimic ±30M default; custom JSON under `config/rpgmechanics/world/borders/`.
+
+### D. Version control
 
 GitHub repo live. Agents bump `mod_version` for every pack jar, tag `vX.Y.Z`, update this Part 2. Rules in Part 1 §23.
 
@@ -1035,13 +1040,35 @@ mixin/client/
 com/ankin/rpgmechanics/
 ├── RpgMechanics.java                 # thin @Mod
 ├── client/RpgMechanicsClient.java
-├── config/RpgMechanicsConfig.java    # SERVER quests + CLIENT keybinds
+├── config/RpgMechanicsConfig.java    # SERVER quests+world + CLIENT keybinds
 ├── keybind/                          # see above
+├── world/                            # protection + fog border
 ├── mixin/
 │   ├── SimpleCriterionTriggerMixin.java
 │   └── client/KeyMapping{Mixin,Accessor,ExtensionMixin}.java
 ├── registry/{ModAttachments,ModCreativeTabs,ModItems}.java
 └── quest/                            # see Key File Tree historically; full tree in repo
+```
+
+### World module (v1)
+
+| Area | Behavior |
+|------|----------|
+| **Protection** | SERVER `world.protectionEnabled` (default true). Cancels break/place/trample/tool-modify/fluid-place/piston/mob-grief; explosions clear block list. Bypass: `builderAllowlist` only by default (`opsBypassProtection=false` so singleplayer cheats do not unlock building). |
+| **Border** | SERVER `world.borderEnabled` (default true). Soft polygonal fog; unconfigured → vanilla-mimic square (~±29,999,984) — **no fog near spawn**. Use `setbox` or JSON for a playable border. Vanilla border size pushed to max + zero damage. |
+| **Commands** | `/rpgmechanics world protection status`; `/rpgmechanics world border reload\|info\|setbox\|addvertex\|…` (OP 2+) |
+| **Client** | Soft RD-anchored fog (`BorderFogRenderer`). Draft preview for OP (`BorderDraftRenderer`). Debug wall: `/rpgmechanics world border debugwall`. |
+| **Authoring** | Border Wand item + `addvertex`/`undo`/`clear`/`save`. Draft syncs to clients. Save rejects self-intersecting / zero-area polygons. |
+
+```
+world/
+├── WorldEvents.java
+├── protection/{WorldProtection,WorldProtectionEvents}
+└── border/
+    ├── BorderPolygon / WorldBorderDefinition / WorldBorderIO / WorldBorderState
+    ├── WorldBorderEngine / WorldBorderCommands
+    ├── network/{WorldNetwork,SyncWorldBorderPayload,WorldBorderSync,WorldClientNetworkBootstrap}
+    └── client/{ClientWorldBorderCache,BorderFogRenderer,BorderDraftRenderer,BorderDebugWallRenderer}
 ```
 
 Resources:
@@ -1066,6 +1093,15 @@ src/main/templates/META-INF/neoforge.mods.toml   # Controlling = discouraged
 |-----|---------|---------|
 | `quests.questAuthoringMode` | `false` | In-game editor + export overlay |
 | `quests.questDevAllowlist` | `[]` | Extra names/UUIDs when authoring on (OP 2+ always) |
+| `world.protectionEnabled` | `true` | RPG terrain lock |
+| `world.opsBypassProtection` | `false` | When true, OP/cheats can build (off by default for RPG/SP) |
+| `world.builderAllowlist` | `[]` | Block-edit bypass names/UUIDs |
+| `world.denyMessage` | `true` | Action-bar deny feedback |
+| `world.borderEnabled` | `true` | Fog border system |
+| `world.borderFogDepth` | `32` | Fog visibility depth past edge |
+| `world.borderSoftMargin` | `8` | Distance before damage |
+| `world.borderMaxDamagePerSecond` | `4` | Damage ramp cap |
+| `world.borderHardKillDistance` | `0` | Optional lethal distance (0=off) |
 
 **Client** `config/rpgmechanics-client.toml`:
 
@@ -1102,11 +1138,10 @@ src/main/templates/META-INF/neoforge.mods.toml   # Controlling = discouraged
 ## Next Work Priorities (Suggested)
 
 1. **Keybind UI vs Controlling** — pack should remove Controlling, or raise our `ScreenEvent` priority / replace `NewKeyBindsScreen` by class name.
-2. **Keybind ownership model** — consider managing only customized binds so unedited keys stay on vanilla path (perf/compat); test thoroughly if changing `isManaged()`.
-3. **Quest Save → export → world restart** — RegistryOps persistence playtest.
-4. **Accept UX** — explicit accept in book vs OP-only today.
-5. **Editor/HUD polish** — spacing, long title wrap.
-6. **More detection methods** — only when user asks; keep curated list small.
+2. **Quest Save → export → world restart** — RegistryOps persistence playtest.
+3. **Accept UX** — explicit accept in book vs OP-only today.
+4. **Editor/HUD polish** — spacing, long title wrap.
+5. **World-space depth fog** — `BorderWorldFogRenderer` disabled; revisit only with solid unprojection.
 
 ---
 
@@ -1118,11 +1153,11 @@ You are continuing RPG Mechanics (NeoForge, MC 1.21.1).
 Read docs/AGENT_HANDOFF.md fully:
 - Part 0 = day-one checklist
 - Part 1 = NeoForge standing skill set + Git/version (§23)
-- Part 2 = project checkpoint (quests + keybinds)
+- Part 2 = project checkpoint (quests + keybinds + world)
 Also read docs/KEYBINDS.md if touching controls.
 
 Git: https://github.com/Ankinkun/RPG-Mechanics.git (branch main).
-Version source of truth: gradle.properties mod_version (currently 0.1.3 / tag v0.1.3).
+Version source of truth: gradle.properties mod_version (currently 0.1.4 / tag v0.1.4).
 Every pack jar: bump mod_version → build → rpgmechanics-{version}.jar → tag vX.Y.Z.
 Do not commit/push unless the user asks. Never invent APIs. Do not restart architecture.
 
@@ -1136,12 +1171,17 @@ repeatable flag; dismiss completed; do NOT restart quest architecture.
 Keybinds (client): RpgKeybindsScreen; pack_defaults+player JSON; primary/secondary/trigger/reset;
 Escape unbinds; authoring only if keybindAuthoringMode=true; live I18n labels;
 Controlling is NeoForge-discouraged — remove it for clean menu. See docs/KEYBINDS.md.
+Inventory hotbar 1–9 + RMB container open fixed in 0.1.3.
 
-Working: quest book/HUD/toasts/editor/curated detection; keybind profile+engine+seed+I18n;
-inventory hotbar 1–9 with managed binds; RMB container open does not leave use held.
+World (v1, shipped 0.1.4): protection (builderAllowlist; opsBypassProtection default false) +
+RD-anchored fog border (polygon JSON or vanilla-mimic ±30M). Border Wand + draft preview.
+Commands /rpgmechanics world border … ; debugwall for striped preview.
+Do not restart world architecture — extend world/ package.
 
-Next (pick with user): Controlling conflict; keybind manage-only-customized; quest restart persistence;
-accept UX. Use .\gradlew.bat compileJava / build / runClient.
+Working: quest book/HUD/toasts/editor; keybind engine; world protection+border.
+
+Next (pick with user): Controlling conflict; quest accept UX; optional world-space fog R&D.
+Use .\gradlew.bat compileJava / build / runClient.
 ```
 
 ---

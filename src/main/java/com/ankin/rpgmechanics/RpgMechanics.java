@@ -7,6 +7,7 @@ import com.ankin.rpgmechanics.quest.network.QuestNetwork;
 import com.ankin.rpgmechanics.registry.ModAttachments;
 import com.ankin.rpgmechanics.registry.ModCreativeTabs;
 import com.ankin.rpgmechanics.registry.ModItems;
+import com.ankin.rpgmechanics.world.border.network.WorldNetwork;
 import com.mojang.logging.LogUtils;
 
 import net.neoforged.bus.api.IEventBus;
@@ -27,6 +28,7 @@ public class RpgMechanics {
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(QuestNetwork::register);
+        modEventBus.addListener(WorldNetwork::register);
         modContainer.registerConfig(ModConfig.Type.SERVER, RpgMechanicsConfig.SERVER_SPEC);
         modContainer.registerConfig(ModConfig.Type.CLIENT, RpgMechanicsConfig.CLIENT_SPEC);
     }

@@ -18,7 +18,10 @@ public final class ModCreativeTabs {
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.rpgmechanics"))
                     .icon(() -> new ItemStack(ModItems.QUEST_EDITOR.get()))
-                    .displayItems((parameters, output) -> output.accept(ModItems.QUEST_EDITOR.get()))
+                    .displayItems((parameters, output) -> {
+                        output.accept(ModItems.QUEST_EDITOR.get());
+                        output.accept(ModItems.BORDER_WAND.get());
+                    })
                     .build()
     );
 

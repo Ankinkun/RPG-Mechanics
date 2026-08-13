@@ -3,6 +3,7 @@ package com.ankin.rpgmechanics.client;
 import com.ankin.rpgmechanics.RpgMechanics;
 import com.ankin.rpgmechanics.quest.client.QuestHudOverlay;
 import com.ankin.rpgmechanics.quest.client.QuestKeybinds;
+import com.ankin.rpgmechanics.world.border.client.BorderWorldFogRenderer;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -18,6 +19,7 @@ public class RpgMechanicsClient {
         modEventBus.addListener(this::onClientSetup);
         modEventBus.addListener(this::onRegisterKeys);
         modEventBus.addListener(this::onRegisterGuiLayers);
+        modEventBus.addListener(BorderWorldFogRenderer::registerShaders);
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {

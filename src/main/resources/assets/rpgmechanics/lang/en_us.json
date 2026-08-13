@@ -1,6 +1,8 @@
 {
   "itemGroup.rpgmechanics": "RPG Mechanics",
   "item.rpgmechanics.quest_editor": "Quest Editor",
+  "item.rpgmechanics.border_wand": "Border Wand",
+  "item.rpgmechanics.border_wand.desc": "OP: Right-click place vertex · Sneak+right-click undo",
   "key.categories.rpgmechanics": "RPG Mechanics",
   "key.rpgmechanics.open_quest_book": "Open Quest Book",
   "screen.rpgmechanics.quest_book": "Quests",
@@ -82,5 +84,7 @@
   "screen.rpgmechanics.keybinds_new_category": "New Category",
   "screen.rpgmechanics.keybinds_reload": "Reload",
   "screen.rpgmechanics.keybinds_hide": "Hide",
-  "screen.rpgmechanics.keybinds_show": "Show"
+  "screen.rpgmechanics.keybinds_show": "Show",
+  "message.rpgmechanics.world_protected": "This world is protected",
+  "commands.rpgmechanics.world_border_reloaded": "World borders reloaded"
 }
