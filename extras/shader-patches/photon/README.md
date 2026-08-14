@@ -11,7 +11,7 @@ float fog_radius = max(min(far, fogEnd), 1.0);
 float fog = cubic_length(scene_pos.xz) / fog_radius;
 ```
 
-RPG Mechanics aims `fogEnd` at the nearest border edge when you look toward it (`BorderFogRenderer`). Unpatched Photon still ignores this.
+RPG Mechanics sets `fogEnd` from distance to the nearest border edge (`BorderFogRenderer`). Unpatched Photon still ignores this.
 
 ## Apply to a Photon zip
 
