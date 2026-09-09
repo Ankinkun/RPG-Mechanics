@@ -86,5 +86,20 @@
   "screen.rpgmechanics.keybinds_hide": "Hide",
   "screen.rpgmechanics.keybinds_show": "Show",
   "message.rpgmechanics.world_protected": "This world is protected",
-  "commands.rpgmechanics.world_border_reloaded": "World borders reloaded"
+  "commands.rpgmechanics.world_border_reloaded": "World borders reloaded",
+  "screen.rpgmechanics.class_select": "Choose Your Class",
+  "screen.rpgmechanics.edit_class": "Edit Class",
+  "screen.rpgmechanics.equipment": "Equipment",
+  "screen.rpgmechanics.coming_soon": "Coming Soon",
+  "screen.rpgmechanics.role.tank": "Tank",
+  "screen.rpgmechanics.role.damage_dealer": "Damage Dealer",
+  "screen.rpgmechanics.role.support": "Support",
+  "screen.rpgmechanics.darkness_dd": "Damage Dealer · Darkness",
+  "screen.rpgmechanics.ability.melee": "Melee",
+  "screen.rpgmechanics.ability.movement": "Movement",
+  "screen.rpgmechanics.ability.ranged": "Ranged",
+  "screen.rpgmechanics.ability.ultimate": "Ultimate",
+  "screen.rpgmechanics.confirm_class": "Confirm",
+  "screen.rpgmechanics.apply_class": "Apply",
+  "message.rpgmechanics.classbuild.spellbook_locked": "Spell loadout can only be changed in Edit Class."
 }

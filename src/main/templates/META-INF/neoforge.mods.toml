@@ -96,6 +96,23 @@ config="rpgmechanics.mixins.json"
     ordering="NONE"
     side="CLIENT"
 
+# Soft integrations for class buildcrafting (pack provides the jars).
+[[dependencies.${mod_id}]]
+    modId="irons_spellbooks"
+    type="optional"
+    reason="Class buildcrafting equips curated Iron Spells spellbooks via Curios."
+    versionRange="[0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="curios"
+    type="optional"
+    reason="Class buildcrafting places the managed spellbook in the Curios spellbook slot."
+    versionRange="[0,)"
+    ordering="NONE"
+    side="BOTH"
+
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
 # that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't
 # stop your mod loading on the server for example.

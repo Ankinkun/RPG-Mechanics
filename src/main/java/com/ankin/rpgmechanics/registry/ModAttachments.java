@@ -3,6 +3,7 @@ package com.ankin.rpgmechanics.registry;
 import java.util.function.Supplier;
 
 import com.ankin.rpgmechanics.RpgMechanics;
+import com.ankin.rpgmechanics.classbuild.ClassBuildState;
 import com.ankin.rpgmechanics.quest.PlayerQuestState;
 import com.mojang.serialization.Codec;
 
@@ -18,6 +19,14 @@ public final class ModAttachments {
             "player_quests",
             () -> AttachmentType.builder(() -> PlayerQuestState.EMPTY)
                     .serialize(PlayerQuestState.CODEC)
+                    .copyOnDeath()
+                    .build()
+    );
+
+    public static final Supplier<AttachmentType<ClassBuildState>> PLAYER_CLASS_BUILD = ATTACHMENT_TYPES.register(
+            "player_class_build",
+            () -> AttachmentType.builder(() -> ClassBuildState.EMPTY)
+                    .serialize(ClassBuildState.CODEC)
                     .copyOnDeath()
                     .build()
     );

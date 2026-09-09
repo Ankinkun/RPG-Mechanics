@@ -4,12 +4,12 @@ A NeoForge mod for **Minecraft 1.21.1** that gives a pack an RPG layer: a quest 
 
 [![Latest release](https://img.shields.io/github/v/release/Ankinkun/RPG-Mechanics?label=latest)](https://github.com/Ankinkun/RPG-Mechanics/releases/latest)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-green)](https://www.minecraft.net/)
-[![NeoForge](https://img.shields.io/badge/NeoForge-21.1.235+-orange)](https://neoforged.net/)
+[![NeoForge](https://img.shields.io/badge/NeoForge-21.1.250+-orange)](https://neoforged.net/)
 [![Java](https://img.shields.io/badge/Java-21-blue)](https://adoptium.net/)
 
-**Latest download:** [rpgmechanics-0.1.5.jar](https://github.com/Ankinkun/RPG-Mechanics/releases/download/v0.1.5/rpgmechanics-0.1.5.jar) · [All versions](https://github.com/Ankinkun/RPG-Mechanics/releases)
+**Latest download:** [rpgmechanics-0.1.6.jar](https://github.com/Ankinkun/RPG-Mechanics/releases/download/v0.1.6/rpgmechanics-0.1.6.jar) · [All versions](https://github.com/Ankinkun/RPG-Mechanics/releases)
 
-Drop the jar into your instance `mods` folder. Requires **Java 21** and **NeoForge 21.1.235 or newer** on Minecraft **1.21.1**.
+Drop the jar into your instance `mods` folder. Requires **Java 21** and **NeoForge 21.1.250 or newer** on Minecraft **1.21.1**.
 
 ---
 
@@ -65,7 +65,7 @@ Check status in-game (OP 2+): `/rpgmechanics world protection status`
 All operator commands need permission level **2**.
 
 ### 1. Install
-1. Install Minecraft 1.21.1 with NeoForge **21.1.235+**.
+1. Install Minecraft 1.21.1 with NeoForge **21.1.250+**.
 2. Put `rpgmechanics-x.y.z.jar` in `mods`.
 3. Boot once so config files generate.
 
@@ -138,7 +138,8 @@ Jars are attached to [GitHub Releases](https://github.com/Ankinkun/RPG-Mechanics
 
 | Version | Highlights | Jar |
 |---------|------------|-----|
-| **0.1.5** | Iris/Photon fog border via `fogEnd` | [Download](https://github.com/Ankinkun/RPG-Mechanics/releases/download/v0.1.5/rpgmechanics-0.1.5.jar) |
+| **0.1.6** | Class buildcrafting v1 + NeoForge 21.1.250 | [Download](https://github.com/Ankinkun/RPG-Mechanics/releases/download/v0.1.6/rpgmechanics-0.1.6.jar) |
+| 0.1.5 | Iris/Photon fog border via `fogEnd` | [Download](https://github.com/Ankinkun/RPG-Mechanics/releases/download/v0.1.5/rpgmechanics-0.1.5.jar) |
 | 0.1.4 | Terrain protection + polygonal fog border | [Download](https://github.com/Ankinkun/RPG-Mechanics/releases/download/v0.1.4/rpgmechanics-0.1.4.jar) |
 | 0.1.3 | Inventory hotbar keys + container RMB | [Download](https://github.com/Ankinkun/RPG-Mechanics/releases/download/v0.1.3/rpgmechanics-0.1.3.jar) |
 | 0.1.2 | Keybind category order from profile JSON | [Download](https://github.com/Ankinkun/RPG-Mechanics/releases/download/v0.1.2/rpgmechanics-0.1.2.jar) |

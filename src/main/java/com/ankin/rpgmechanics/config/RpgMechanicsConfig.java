@@ -38,6 +38,10 @@ public final class RpgMechanicsConfig {
         public final ModConfigSpec.DoubleValue borderMaxDamagePerSecond;
         public final ModConfigSpec.DoubleValue borderHardKillDistance;
 
+        public final ModConfigSpec.BooleanValue classbuildEnabled;
+        public final ModConfigSpec.IntValue classbuildSpellLevel;
+        public final ModConfigSpec.BooleanValue classbuildForceAdventure;
+
         private Server(ModConfigSpec.Builder builder) {
             builder.push("quests");
             questAuthoringMode = builder
@@ -102,6 +106,18 @@ public final class RpgMechanicsConfig {
                             "Players can still walk into fog; this is a safety net for extreme teleport distances."
                     )
                     .defineInRange("borderHardKillDistance", 0.0, 0.0, 1_000_000.0);
+            builder.pop();
+
+            builder.push("classbuild");
+            classbuildEnabled = builder
+                    .comment("Enable class select gate, custom equipment inventory, and managed Iron Spells loadouts.")
+                    .define("enabled", true);
+            classbuildSpellLevel = builder
+                    .comment("Spell level written into the managed 4-slot spellbook.")
+                    .defineInRange("spellLevel", 3, 1, 10);
+            classbuildForceAdventure = builder
+                    .comment("Set Adventure mode when a class build is confirmed.")
+                    .define("forceAdventure", true);
             builder.pop();
         }
     }

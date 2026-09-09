@@ -4,7 +4,8 @@
   "package": "com.ankin.rpgmechanics.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "SimpleCriterionTriggerMixin"
+    "SimpleCriterionTriggerMixin",
+    "AbstractContainerMenuMixin"
   ],
   "client": [
     "client.KeyMappingAccessor",

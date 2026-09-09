@@ -28,16 +28,17 @@ Do this before writing code:
    Remote must be `https://github.com/Ankinkun/RPG-Mechanics.git`, branch `main`.
 4. **Versions** — confirm in `gradle.properties`:
    - `minecraft_version=1.21.1`
-   - `neo_version=21.1.235`
-   - `mod_version=0.1.5` (bump before every pack jar — see §23)
+   - `neo_version=21.1.250`
+   - `mod_version=0.1.6` (bump before every pack jar — see §23)
 5. **Compile**
    ```powershell
    .\gradlew.bat compileJava
    ```
-6. **Map the code** — three feature domains:
+6. **Map the code** — feature domains:
    - `quest/` — pack-owned quests, book, editor, criterion bridge
    - `keybind/` — client keybind profile UI + input engine
    - `world/` — RPG terrain protection + polygonal fog border
+   - `classbuild/` — class select, equipment sheet, Iron Spells loadout
 7. **Do not restart architecture.** Extend existing modules; ask before large redesigns.
 8. **Do not commit/push** unless the user asks. Every user-facing build → new `mod_version` + jar `rpgmechanics-{version}.jar`.
 
@@ -64,7 +65,7 @@ You are a **senior Minecraft mod engineer** working on a **production NeoForge m
 | Rule | Value |
 |------|-------|
 | Minecraft | **1.21.1 only** |
-| NeoForge | Match `gradle.properties` → `neo_version` (currently **21.1.235**) |
+| NeoForge | Match `gradle.properties` → `neo_version` (currently **21.1.250**) |
 | Java | **21** (toolchain + language features) |
 | Gradle | **Gradle Wrapper only** — never assume a global Gradle install |
 | Build plugin | **ModDevGradle** (`net.neoforged.moddev`) |
@@ -821,9 +822,9 @@ You **must not**:
 
 # PART 2 — Project Checkpoint (RPG Mechanics)
 
-**Checkpoint date:** 2026-08-13  
-**Mod version:** `0.1.5` (tag `v0.1.5`) — Iris/Photon fogEnd border + soft shader fallback off by default  
-**Status:** Quests + keybinds + **world** (protection, RD-anchored fog border, Iris/Photon `fogEnd` path, Border Wand). Controlling is NeoForge-**discouraged**. **Do not restart architecture.**  
+**Checkpoint date:** 2026-09-09  
+**Mod version:** `0.1.6` (tag `v0.1.6`) — classbuild v1 + NeoForge 21.1.250  
+**Status:** Quests + keybinds + world + **classbuild** (Darkness DD, ISS spellbook lock, equipment sheet). Controlling is NeoForge-**discouraged**. **Do not restart architecture.**  
 **Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git
 
 ---
@@ -840,10 +841,10 @@ You **must not**:
 | **Author** | ankin |
 | **Package** | `com.ankin.rpgmechanics` |
 | **Minecraft** | 1.21.1 |
-| **NeoForge** | 21.1.235 (`gradle.properties` → `neo_version`) |
+| **NeoForge** | 21.1.250 (`gradle.properties` → `neo_version`) |
 | **Java** | 21 |
 | **Build** | ModDevGradle (`build.gradle`) |
-| **Version** | `0.1.5` (`gradle.properties` → `mod_version`) |
+| **Version** | `0.1.6` (`gradle.properties` → `mod_version`) |
 | **Metadata** | `src/main/templates/META-INF/neoforge.mods.toml` |
 | **Mixins** | `src/main/resources/rpgmechanics.mixins.json` |
 
@@ -856,7 +857,7 @@ cd "A:\Orga\RPG modpack\The Project"
 
 If `createMinecraftArtifacts` fails with a locked jar, a leftover `runClient`/`runServer` Java process is holding `build/moddev/artifacts/neoforge-*.jar` — kill it, then rebuild.
 
-**Modpack note:** Arcadias Legacy (and similar) should use NeoForge **≥ 21.1.235** to match this mod. Older NeoForge (e.g. 21.1.234) fails dependency resolution. Packs on 21.1.238+ may break *other* mods (End Remastered duplicate registry, SLM config-before-load) — those are **not** RPG Mechanics bugs.
+**Modpack note:** Arcadias Legacy (and similar) should use NeoForge **≥ 21.1.250** to match this mod. Older NeoForge fails dependency resolution against this jar. Pack-side issues with other mods on newer NeoForge lines are **not** RPG Mechanics bugs.
 
 ---
 
@@ -874,7 +875,11 @@ Replaces vanilla Key Binds screen with `RpgKeybindsScreen`. Profile JSON under `
 
 RPG terrain protection (break/place/grief cancelled; OP/allowlist builders). Soft polygonal fog border with vanilla-mimic ±30M default; custom JSON under `config/rpgmechanics/world/borders/`.
 
-### D. Version control
+### D. Class / buildcrafting (server + client + ISS)
+
+Destiny-style class select (v1: Darkness Damage Dealer only). Tank/Support Coming Soon. Confirmed build → Adventure mode + managed Curios spellbook (4 locked spells). Inventory replaced with armor/weapon/offhand + Edit Class. Spellbook edits only via Class Edit (Inscription Table / Curios unequip blocked). Soft `compileOnly` on Iron Spells + Curios.
+
+### E. Version control
 
 GitHub repo live. Agents bump `mod_version` for every pack jar, tag `vX.Y.Z`, update this Part 2. Rules in Part 1 §23.
 
@@ -1043,6 +1048,7 @@ com/ankin/rpgmechanics/
 ├── config/RpgMechanicsConfig.java    # SERVER quests+world + CLIENT keybinds
 ├── keybind/                          # see above
 ├── world/                            # protection + fog border
+├── classbuild/                       # class select, equipment sheet, ISS loadout
 ├── mixin/
 │   ├── SimpleCriterionTriggerMixin.java
 │   └── client/KeyMapping{Mixin,Accessor,ExtensionMixin}.java
@@ -1103,6 +1109,9 @@ src/main/templates/META-INF/neoforge.mods.toml   # Controlling = discouraged
 | `world.borderMaxDamagePerSecond` | `4` | Damage ramp cap |
 | `world.borderHardKillDistance` | `0` | Optional lethal distance (0=off) |
 | CLIENT `world.borderShaderFallbackWall` | `false` | Optional forcefield wall with shaders (fog preferred) |
+| `classbuild.enabled` | `true` | Class select + equipment + managed spellbooks |
+| `classbuild.spellLevel` | `3` | Level written into managed book slots |
+| `classbuild.forceAdventure` | `true` | Adventure mode on confirm |
 
 **Client** `config/rpgmechanics-client.toml`:
 
@@ -1112,7 +1121,25 @@ src/main/templates/META-INF/neoforge.mods.toml   # Controlling = discouraged
 
 ---
 
+## Class build (v1) locks
+
+1. Do not restart — extend `classbuild/`.
+2. Spellbook content is owned by Class Select / Edit Class only; attachment is source of truth; reconcile rewrites drift.
+3. Tank/Support + other element tracks + passives are out of scope until designed.
+4. Iron Spells / Curios via `IronSpellsSoft` reflection + `ClassBuildIntegrationEvents` (no hard crash if jars missing).
+5. OP helpers: `/rpgmechanics class reset|apply|info`
+
+---
+
 ## Manual Smoke Tests
+
+### Class build
+
+1. Fresh player / `/rpgmechanics class reset` → Class Select (Tank/Support disabled).
+2. Pick DD → kit → Confirm → Adventure + Curios spellbook with 4 spells.
+3. Inventory → equipment sheet; Edit Class changes ultimate → book item swaps (Dragonskin/Vampiric/Ancient Codex).
+4. Inscription Table / Curios unequip cannot change loadout.
+5. Without ISS jars: game still boots; class UI works, book apply no-ops.
 
 ### Quests
 
@@ -1158,12 +1185,12 @@ Read docs/AGENT_HANDOFF.md fully:
 Also read docs/KEYBINDS.md if touching controls.
 
 Git: https://github.com/Ankinkun/RPG-Mechanics.git (branch main).
-Version source of truth: gradle.properties mod_version (currently 0.1.5 / tag v0.1.5).
+Version source of truth: gradle.properties mod_version (currently 0.1.6 / tag v0.1.6).
 Every pack jar: bump mod_version → build → rpgmechanics-{version}.jar → tag vX.Y.Z.
 Do not commit/push unless the user asks. Never invent APIs. Do not restart architecture.
 
 Project: A:\Orga\RPG modpack\The Project
-Mod: rpgmechanics / com.ankin.rpgmechanics / NeoForge 21.1.235 / Java 21
+Mod: rpgmechanics / com.ankin.rpgmechanics / NeoForge 21.1.250 / Java 21
 
 Quests (locked): pack-owned defs; authoring default off; export config/rpgmechanics/quest_export/;
 J opens book; RMB track; Criterion + mixin; RegistryOps for criteria; step0-only initiate;
@@ -1174,16 +1201,16 @@ Escape unbinds; authoring only if keybindAuthoringMode=true; live I18n labels;
 Controlling is NeoForge-discouraged — remove it for clean menu. See docs/KEYBINDS.md.
 Inventory hotbar 1–9 + RMB container open fixed in 0.1.3.
 
-World (v1+): protection (builderAllowlist; opsBypassProtection default false) +
-RD-anchored fog border (polygon JSON or vanilla-mimic ±30M). Border Wand + draft preview.
-Iris/Photon: drive fogEnd by distance-to-edge; pack needs extras/shader-patches/photon on Photon.
-CLIENT world.borderShaderFallbackWall default false. debugwall still available.
-Commands /rpgmechanics world border … .
-Do not restart world architecture — extend world/ package.
+World (v1+): protection + RD-anchored fog border; Photon fogEnd patch in extras/shader-patches/photon.
+CLIENT world.borderShaderFallbackWall default false.
 
-Working: quest book/HUD/toasts/editor; keybind engine; world protection+border; Photon fogEnd path.
+Classbuild (v1): Darkness DD only; Class Select + Edit Class; managed 4-slot ISS spellbook via Curios;
+equipment inventory (armor/weapon/offhand); spellbook locked outside Edit Class.
+Extend classbuild/ — do not restart.
 
-Next (pick with user): Controlling conflict; quest accept UX; optional world-space fog R&D.
+Working: quests; keybinds; world; classbuild (compile-verified).
+
+Next (pick with user): playtest classbuild in Wonder-Land; Tank/Support later.
 Use .\gradlew.bat compileJava / build / runClient.
 ```
 

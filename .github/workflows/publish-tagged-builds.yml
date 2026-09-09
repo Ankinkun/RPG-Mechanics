@@ -54,13 +54,13 @@ jobs:
           tag_name: ${{ matrix.tag }}
           name: RPG Mechanics ${{ steps.ver.outputs.version }}
           generate_release_notes: true
-          make_latest: ${{ matrix.tag == 'v0.1.5' }}
+          make_latest: ${{ matrix.tag == 'v0.1.6' }}
           files: |
             build/libs/rpgmechanics-${{ steps.ver.outputs.version }}.jar
             extras/shader-patches/photon/simple_fog.glsl
           fail_on_unmatched_files: false
           body: |
-            Minecraft **1.21.1** · NeoForge **21.1.235+** · Java **21**
+            Minecraft **1.21.1** · NeoForge **21.1.250+** · Java **21**
 
             Drop `rpgmechanics-${{ steps.ver.outputs.version }}.jar` into your instance `mods` folder.
 
