@@ -51,6 +51,13 @@ public final class IronSpellsSoft {
         invoke("reconcile", new Class<?>[] {ServerPlayer.class, ClassBuildState.class, int.class}, player, build, spellLevel);
     }
 
+    public static void quickCast(ServerPlayer player, int spellIndex) {
+        if (!isAvailable()) {
+            return;
+        }
+        invoke("quickCast", new Class<?>[] {ServerPlayer.class, int.class}, player, spellIndex);
+    }
+
     public static void registerIntegrationEvents() {
         if (!isAvailable()) {
             RpgMechanics.LOGGER.info("Iron Spells/Curios not present — class spellbook bridge disabled");

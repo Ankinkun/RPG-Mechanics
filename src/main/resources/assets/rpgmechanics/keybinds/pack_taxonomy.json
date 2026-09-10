@@ -1,0 +1,69 @@
+{
+  "taxonomyVersion": 4,
+  "categories": [
+    {
+      "id": "key.categories.rpgmechanics.movement",
+      "title": "Movement",
+      "entries": [
+        "key.forward",
+        "key.left",
+        "key.back",
+        "key.right",
+        "key.jump",
+        "key.sneak",
+        "key.epicfight.dodge"
+      ]
+    },
+    {
+      "id": "key.categories.rpgmechanics.combat",
+      "title": "Combat",
+      "entries": [
+        "key.epicfight.attack",
+        "key.epicfight.guard",
+        "key.epicfight.lock_on",
+        "key.rpgmechanics.ability_1",
+        "key.rpgmechanics.ability_2",
+        "key.rpgmechanics.ability_3",
+        "key.rpgmechanics.ability_4"
+      ]
+    },
+    {
+      "id": "key.categories.rpgmechanics.inventory",
+      "title": "Inventory",
+      "entries": [
+        "key.inventory",
+        "key.chat",
+        "key.shouldersurfing.swap_shoulder",
+        "key.rpgmechanics.open_quest_book",
+        "gui.xaero_open_map",
+        "key.epicfight.skill_gui"
+      ]
+    }
+  ],
+  "allowlist": [
+    "key.forward",
+    "key.left",
+    "key.back",
+    "key.right",
+    "key.jump",
+    "key.sneak",
+    "key.epicfight.dodge",
+    "key.epicfight.attack",
+    "key.epicfight.guard",
+    "key.epicfight.lock_on",
+    "key.rpgmechanics.ability_1",
+    "key.rpgmechanics.ability_2",
+    "key.rpgmechanics.ability_3",
+    "key.rpgmechanics.ability_4",
+    "key.inventory",
+    "key.chat",
+    "key.shouldersurfing.swap_shoulder",
+    "key.rpgmechanics.open_quest_book",
+    "gui.xaero_open_map",
+    "key.epicfight.skill_gui"
+  ],
+  "forceDisablePrefixes": [
+    "key.irons_spellbooks.",
+    "key.hotbar."
+  ]
+}

@@ -123,6 +123,9 @@ dependencies {
     compileOnly files("$runMods/irons_spellbooks-1.21.1-3.16.3.jar")
     compileOnly files("$runMods/curios-neoforge-9.5.1+1.21.1.jar")
     compileOnly files("$runMods/irons_lib-1.21.1-2.1.0.jar")
+    compileOnly files("$runMods/epic-fight-21.17.3.1-mc1.21.1-neoforge.jar")
+    compileOnly files("$runMods/xaeroworldmap-neoforge-1.21.1-1.45.0.jar")
+    compileOnly files("libs/xaerolib-neoforge-1.21.1-1.7.1.jar")
 
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime

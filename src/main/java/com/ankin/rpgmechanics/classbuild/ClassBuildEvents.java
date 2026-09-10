@@ -1,10 +1,10 @@
 package com.ankin.rpgmechanics.classbuild;
 
 import com.ankin.rpgmechanics.RpgMechanics;
+import com.ankin.rpgmechanics.classbuild.integration.EpicFightSoft;
 import com.ankin.rpgmechanics.classbuild.integration.IronSpellsSoft;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -31,13 +31,21 @@ public final class ClassBuildEvents {
         if (!ClassBuildManager.isFeatureEnabled()) {
             return;
         }
-        ClassBuildManager.sync(player);
-        ClassBuildState state = ClassBuildManager.get(player);
-        if (state.confirmed()) {
-            ClassBuildManager.applyLoadout(player);
-        } else {
-            ClassBuildManager.openSelectIfNeeded(player);
+        // Destiny-style: always land on character select each session.
+        ClassBuildManager.saveEquipmentFromPlayer(player);
+        ClassBuildManager.setRoster(player, ClassBuildManager.getRoster(player).clearActive());
+        ClassBuildManager.openSelectIfNeeded(player);
+    }
+
+    @SubscribeEvent
+    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
         }
+        if (!ClassBuildManager.isFeatureEnabled()) {
+            return;
+        }
+        ClassBuildManager.saveEquipmentFromPlayer(player);
     }
 
     @SubscribeEvent
@@ -49,7 +57,7 @@ public final class ClassBuildEvents {
             return;
         }
         ClassBuildManager.sync(player);
-        if (ClassBuildManager.get(player).confirmed()) {
+        if (ClassBuildManager.hasActiveCharacter(player)) {
             ClassBuildManager.applyLoadout(player);
         } else {
             ClassBuildManager.openSelectIfNeeded(player);
@@ -61,7 +69,7 @@ public final class ClassBuildEvents {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.getServer() == null) {
             return;
         }
-        if (ClassBuildManager.get(player).confirmed()) {
+        if (ClassBuildManager.hasActiveCharacter(player)) {
             player.getServer().execute(() -> ClassBuildManager.applyLoadout(player));
         }
     }
@@ -71,14 +79,22 @@ public final class ClassBuildEvents {
         if (!ClassBuildManager.isFeatureEnabled()) {
             return;
         }
+        for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
+            if (!ClassBuildManager.hasActiveCharacter(player) || player.isCreative()) {
+                continue;
+            }
+            // Immediate sweep — never leave pickups sitting in vanilla slots.
+            StowedInventory.scrubVanillaSlots(player);
+        }
         reconcileTicker++;
         if (reconcileTicker < 100) {
             return;
         }
         reconcileTicker = 0;
         for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
-            if (ClassBuildManager.get(player).confirmed()) {
+            if (ClassBuildManager.hasActiveCharacter(player)) {
                 ClassBuildManager.reconcile(player);
+                EpicFightSoft.ensureCombatMode(player);
             }
         }
     }
@@ -89,17 +105,14 @@ public final class ClassBuildEvents {
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return;
         }
-        if (!ClassBuildManager.get(serverPlayer).confirmed()) {
+        if (!ClassBuildManager.hasActiveCharacter(serverPlayer) || serverPlayer.isCreative()) {
             return;
         }
         ItemStack stack = event.getItemEntity().getItem();
         if (IronSpellsSoft.isManaged(stack) || isSpellbookItem(stack)) {
             event.setCanPickup(TriState.FALSE);
-            return;
         }
-        if (!canFitInHotbarOrEquipment(serverPlayer, stack)) {
-            event.setCanPickup(TriState.FALSE);
-        }
+        // World pickups call Inventory.add → InventoryMixin deposits into stowed (not hotbar/hand).
     }
 
     @SubscribeEvent
@@ -107,7 +120,7 @@ public final class ClassBuildEvents {
         if (!(event.getPlayer() instanceof ServerPlayer player)) {
             return;
         }
-        if (!ClassBuildManager.get(player).confirmed()) {
+        if (!ClassBuildManager.hasActiveCharacter(player)) {
             return;
         }
         if (IronSpellsSoft.isManaged(event.getEntity().getItem())) {
@@ -120,34 +133,35 @@ public final class ClassBuildEvents {
         return inventoryIndex >= 9 && inventoryIndex <= 35;
     }
 
+    /** True for any bag/hotbar index that must not receive items (0–35). */
+    public static boolean isVanillaBagOrHotbarSlot(int inventoryIndex) {
+        return inventoryIndex >= 0 && inventoryIndex <= 35;
+    }
+
+    /**
+     * Block placing into vanilla player slots; deposit the carried stack into stowed instead.
+     */
     public static boolean denyStorageInsert(Player player, Slot slot, ItemStack carried) {
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return false;
         }
-        if (!ClassBuildManager.get(serverPlayer).confirmed()) {
+        if (serverPlayer.isCreative()) {
+            return false;
+        }
+        if (!ClassBuildManager.hasActiveCharacter(serverPlayer)) {
             return false;
         }
         if (slot == null || slot.container != player.getInventory()) {
             return false;
         }
-        return isStorageSlot(slot.getContainerSlot()) && !carried.isEmpty();
-    }
-
-    private static boolean canFitInHotbarOrEquipment(ServerPlayer player, ItemStack stack) {
-        Inventory inv = player.getInventory();
-        for (int i = 0; i < 9; i++) {
-            ItemStack existing = inv.getItem(i);
-            if (existing.isEmpty()) {
-                return true;
-            }
-            if (ItemStack.isSameItemSameComponents(existing, stack)
-                    && existing.getCount() < existing.getMaxStackSize()) {
-                return true;
-            }
+        if (!isVanillaBagOrHotbarSlot(slot.getContainerSlot())) {
+            return false;
         }
-        ItemStack off = inv.offhand.getFirst();
-        return off.isEmpty() || (ItemStack.isSameItemSameComponents(off, stack)
-                && off.getCount() < off.getMaxStackSize());
+        if (carried.isEmpty()) {
+            return false;
+        }
+        StowedInventory.stowPickup(serverPlayer, carried);
+        return true;
     }
 
     private static boolean isSpellbookItem(ItemStack stack) {

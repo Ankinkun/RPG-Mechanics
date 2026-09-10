@@ -3,9 +3,8 @@ package com.ankin.rpgmechanics.registry;
 import java.util.function.Supplier;
 
 import com.ankin.rpgmechanics.RpgMechanics;
-import com.ankin.rpgmechanics.classbuild.ClassBuildState;
+import com.ankin.rpgmechanics.classbuild.CharacterRoster;
 import com.ankin.rpgmechanics.quest.PlayerQuestState;
-import com.mojang.serialization.Codec;
 
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -23,10 +22,14 @@ public final class ModAttachments {
                     .build()
     );
 
-    public static final Supplier<AttachmentType<ClassBuildState>> PLAYER_CLASS_BUILD = ATTACHMENT_TYPES.register(
+    /**
+     * Character roster (3 Destiny-style slots). Codec also accepts legacy single ClassBuildState NBT
+     * previously stored under this attachment id.
+     */
+    public static final Supplier<AttachmentType<CharacterRoster>> PLAYER_CHARACTER_ROSTER = ATTACHMENT_TYPES.register(
             "player_class_build",
-            () -> AttachmentType.builder(() -> ClassBuildState.EMPTY)
-                    .serialize(ClassBuildState.CODEC)
+            () -> AttachmentType.builder(() -> CharacterRoster.EMPTY)
+                    .serialize(CharacterRoster.CODEC)
                     .copyOnDeath()
                     .build()
     );

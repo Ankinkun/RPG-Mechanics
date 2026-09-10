@@ -125,6 +125,8 @@ public final class RpgMechanicsConfig {
     public static final class Client {
         public final ModConfigSpec.BooleanValue keybindAuthoringMode;
         public final ModConfigSpec.BooleanValue borderShaderFallbackWall;
+        public final ModConfigSpec.BooleanValue classbuildCombatHud;
+        public final ModConfigSpec.ConfigValue<String> classbuildCampaignWorldName;
 
         private Client(ModConfigSpec.Builder builder) {
             builder.push("keybinds");
@@ -146,6 +148,22 @@ public final class RpgMechanicsConfig {
                             "Manual /rpgmechanics world border debugwall still works either way."
                     )
                     .define("borderShaderFallbackWall", false);
+            builder.pop();
+
+            builder.push("classbuild");
+            classbuildCombatHud = builder
+                    .comment(
+                            "LoL-style combat HUD: HP + 4 ability icons with cooldowns + mana.",
+                            "Hides vanilla hotbar, XP, food, health, and Iron's Spells mana/spell chrome when a character is active."
+                    )
+                    .define("combatHud", true);
+            classbuildCampaignWorldName = builder
+                    .comment(
+                            "Singleplayer save folder name to load after title character select.",
+                            "Empty = first available save under saves/.",
+                            "TODO campaign: per-character worlds later; for now all characters share this world."
+                    )
+                    .define("campaignWorldName", "");
             builder.pop();
         }
     }

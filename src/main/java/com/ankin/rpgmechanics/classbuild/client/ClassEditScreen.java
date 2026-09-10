@@ -4,6 +4,10 @@ import java.util.List;
 
 import com.ankin.rpgmechanics.classbuild.ClassBuildCatalog;
 import com.ankin.rpgmechanics.classbuild.ClassBuildState;
+import com.ankin.rpgmechanics.classbuild.client.ui.RpgHubTab;
+import com.ankin.rpgmechanics.classbuild.client.ui.RpgHubTabBar;
+import com.ankin.rpgmechanics.classbuild.client.ui.RpgUiPanels;
+import com.ankin.rpgmechanics.classbuild.client.ui.RpgUiTheme;
 import com.ankin.rpgmechanics.classbuild.network.ConfirmClassBuildPayload;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -14,7 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * Edit Class from equipment sheet. Role/track locked to Damage Dealer / Darkness.
+ * Edit Class hub tab. Role/track locked to Damage Dealer / Darkness.
  */
 public class ClassEditScreen extends Screen {
     private ResourceLocation melee;
@@ -38,7 +42,8 @@ public class ClassEditScreen extends Screen {
     @Override
     protected void init() {
         this.clearWidgets();
-        int y = 48;
+        RpgHubTabBar.addTo(this::addRenderableWidget, this.width, RpgHubTab.CLASS);
+        int y = RpgUiTheme.TAB_BAR_H + 24;
         y = addAbilityRow(y, "screen.rpgmechanics.ability.melee", ClassBuildCatalog.MELEE, melee, id -> melee = id);
         y = addAbilityRow(y + 8, "screen.rpgmechanics.ability.movement", ClassBuildCatalog.MOVEMENT, movement, id -> movement = id);
         y = addAbilityRow(y + 8, "screen.rpgmechanics.ability.ranged", ClassBuildCatalog.RANGED, ranged, id -> ranged = id);
@@ -55,8 +60,11 @@ public class ClassEditScreen extends Screen {
                     ranged,
                     ultimate
             );
-            PacketDistributor.sendToServer(new ConfirmClassBuildPayload(draft));
-            this.onClose();
+            int slot = ClassBuildClientPayloadHandlers.cachedRoster().activeSlot();
+            if (slot < 0) {
+                slot = 0;
+            }
+            PacketDistributor.sendToServer(new ConfirmClassBuildPayload(slot, draft));
         }).bounds(cx - 60, Math.min(y + 16, this.height - 28), 120, 20).build());
     }
 
@@ -75,10 +83,11 @@ public class ClassEditScreen extends Screen {
         for (ResourceLocation option : options) {
             boolean on = option.equals(selected);
             String name = ClassBuildCatalog.displayName(option);
-            this.addRenderableWidget(Button.builder(Component.literal(on ? "[" + name + "]" : name), b -> {
+            Button button = Button.builder(Component.literal(on ? "[" + name + "]" : name), b -> {
                 setter.accept(option);
                 rebuildWidgets();
-            }).bounds(x, y, 70, 20).build());
+            }).bounds(x, y, 70, 20).build();
+            this.addRenderableWidget(button);
             x += 74;
         }
         return y + 24;
@@ -86,15 +95,29 @@ public class ClassEditScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        RpgUiPanels.drawFullDim(graphics, this.width, this.height);
+        RpgUiPanels.drawTabBarBg(graphics, this.width);
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 12, 0xFFFFFF);
         graphics.drawCenteredString(
                 this.font,
                 Component.translatable("screen.rpgmechanics.darkness_dd"),
                 this.width / 2,
-                28,
-                0xC080FF
+                RpgUiTheme.TAB_BAR_H + 8,
+                RpgUiTheme.ACCENT
         );
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == 256) {
+            this.minecraft.setScreen(new RpgOverviewScreen());
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 }

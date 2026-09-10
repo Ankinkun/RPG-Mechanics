@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.ankin.rpgmechanics.classbuild.ClassBuildCatalog;
 import com.ankin.rpgmechanics.classbuild.ClassBuildState;
+import com.ankin.rpgmechanics.classbuild.client.ui.RpgUiPanels;
+import com.ankin.rpgmechanics.classbuild.client.ui.RpgUiTheme;
 import com.ankin.rpgmechanics.classbuild.network.ConfirmClassBuildPayload;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -14,7 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * First-join role select. Tank/Support are Coming Soon; Damage Dealer opens kit picker.
+ * Role + kit picker for creating a character in a specific roster slot.
  */
 public class ClassSelectScreen extends Screen {
     private enum Phase {
@@ -22,14 +24,22 @@ public class ClassSelectScreen extends Screen {
         KIT
     }
 
+    private final int slotIndex;
+    private final boolean titleFlow;
     private Phase phase = Phase.ROLE;
     private ResourceLocation melee = ClassBuildCatalog.DEFAULT_MELEE;
     private ResourceLocation movement = ClassBuildCatalog.DEFAULT_MOVEMENT;
     private ResourceLocation ranged = ClassBuildCatalog.DEFAULT_RANGED;
     private ResourceLocation ultimate = ClassBuildCatalog.DEFAULT_ULTIMATE;
 
-    public ClassSelectScreen() {
+    public ClassSelectScreen(int slotIndex) {
+        this(slotIndex, false);
+    }
+
+    public ClassSelectScreen(int slotIndex, boolean titleFlow) {
         super(Component.translatable("screen.rpgmechanics.class_select"));
+        this.slotIndex = slotIndex;
+        this.titleFlow = titleFlow;
     }
 
     @Override
@@ -68,11 +78,15 @@ public class ClassSelectScreen extends Screen {
                 b -> {
                 }
         ).bounds(cx - 100, y + 56, 200, 20).build()).active = false;
+
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.back"), b -> {
+            this.minecraft.setScreen(new CharacterSelectScreen(titleFlow));
+        }).bounds(cx - 100, y + 92, 200, 20).build());
     }
 
     private void initKitPhase() {
         int cx = this.width / 2;
-        int y = 40;
+        int y = 48;
         y = addAbilityRow(y, "screen.rpgmechanics.ability.melee", ClassBuildCatalog.MELEE, melee, id -> melee = id);
         y = addAbilityRow(y + 8, "screen.rpgmechanics.ability.movement", ClassBuildCatalog.MOVEMENT, movement, id -> movement = id);
         y = addAbilityRow(y + 8, "screen.rpgmechanics.ability.ranged", ClassBuildCatalog.RANGED, ranged, id -> ranged = id);
@@ -88,8 +102,12 @@ public class ClassSelectScreen extends Screen {
                     ranged,
                     ultimate
             );
-            PacketDistributor.sendToServer(new ConfirmClassBuildPayload(draft));
-            this.onClose();
+            if (titleFlow) {
+                TitleSelectPending.playNew(slotIndex, draft);
+            } else {
+                PacketDistributor.sendToServer(new ConfirmClassBuildPayload(slotIndex, draft));
+                this.onClose();
+            }
         }).bounds(cx - 60, Math.min(y + 16, this.height - 28), 120, 20).build());
 
         this.addRenderableWidget(Button.builder(Component.translatable("gui.back"), b -> {
@@ -125,16 +143,16 @@ public class ClassSelectScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        RpgUiPanels.drawFullDim(graphics, this.width, this.height);
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 12, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, this.title, this.width / 2, 16, RpgUiTheme.TEXT);
         if (phase == Phase.KIT) {
             graphics.drawCenteredString(
                     this.font,
                     Component.translatable("screen.rpgmechanics.darkness_dd"),
                     this.width / 2,
-                    26,
-                    0xC080FF
+                    32,
+                    RpgUiTheme.ACCENT
             );
         }
     }
@@ -146,6 +164,6 @@ public class ClassSelectScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() {
-        return true;
+        return false;
     }
 }

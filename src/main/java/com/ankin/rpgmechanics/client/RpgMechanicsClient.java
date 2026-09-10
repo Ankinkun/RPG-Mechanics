@@ -1,7 +1,9 @@
 package com.ankin.rpgmechanics.client;
 
 import com.ankin.rpgmechanics.RpgMechanics;
-import com.ankin.rpgmechanics.classbuild.client.RpgEquipmentScreen;
+import com.ankin.rpgmechanics.classbuild.client.CombatHudKeybinds;
+import com.ankin.rpgmechanics.classbuild.client.CombatHudOverlay;
+import com.ankin.rpgmechanics.classbuild.client.RpgEquipmentMenuScreen;
 import com.ankin.rpgmechanics.quest.client.QuestHudOverlay;
 import com.ankin.rpgmechanics.quest.client.QuestKeybinds;
 import com.ankin.rpgmechanics.registry.ModMenus;
@@ -37,13 +39,15 @@ public class RpgMechanicsClient {
 
     private void onRegisterKeys(RegisterKeyMappingsEvent event) {
         QuestKeybinds.registerKeys(event);
+        CombatHudKeybinds.registerKeys(event);
     }
 
     private void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         QuestHudOverlay.register(event);
+        CombatHudOverlay.register(event);
     }
 
     private void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
-        event.register(ModMenus.RPG_EQUIPMENT.get(), RpgEquipmentScreen::new);
+        event.register(ModMenus.RPG_EQUIPMENT.get(), RpgEquipmentMenuScreen::new);
     }
 }

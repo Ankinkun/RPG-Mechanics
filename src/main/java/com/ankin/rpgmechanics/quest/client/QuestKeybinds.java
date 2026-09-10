@@ -41,7 +41,10 @@ public final class QuestKeybinds {
             }
             if (minecraft.screen instanceof QuestBookScreen) {
                 minecraft.setScreen(null);
-            } else if (minecraft.screen == null) {
+            } else if (minecraft.screen == null
+                    || minecraft.screen instanceof com.ankin.rpgmechanics.classbuild.client.RpgOverviewScreen
+                    || minecraft.screen instanceof com.ankin.rpgmechanics.classbuild.client.RpgEquipmentScreen
+                    || minecraft.screen instanceof com.ankin.rpgmechanics.classbuild.client.ClassEditScreen) {
                 minecraft.setScreen(new QuestBookScreen());
             }
         }

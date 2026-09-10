@@ -53,7 +53,10 @@ public final class IronSpellsBridge {
                 continue;
             }
             int level = Math.max(spell.getMinLevel(), Math.min(spellLevel, spell.getMaxLevel()));
-            mutable.addSpellAtIndex(spell, i, level, true);
+            // ISS signature: addSpellAtIndex(spell, level, index, locked) — not (spell, index, level, …).
+            if (!mutable.addSpellAtIndex(spell, level, i, true)) {
+                RpgMechanics.LOGGER.warn("Failed to write spell {} at index {}", spells.get(i), i);
+            }
         }
         ISpellContainer.set(stack, mutable.toImmutable());
         IronSpellsSoft.markManaged(stack);
@@ -114,5 +117,13 @@ public final class IronSpellsBridge {
         if (!matchesEquipped(player, build, spellLevel)) {
             apply(player, build, spellLevel);
         }
+    }
+
+    /** Cast managed book spell at wheel index (0–3). */
+    public static void quickCast(ServerPlayer player, int spellIndex) {
+        if (!isAvailable() || spellIndex < 0 || spellIndex > 3) {
+            return;
+        }
+        Utils.serverSideInitiateQuickCast(player, spellIndex);
     }
 }

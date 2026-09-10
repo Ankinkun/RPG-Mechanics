@@ -5,6 +5,11 @@ import com.ankin.rpgmechanics.quest.QuestDefinition;
 import com.ankin.rpgmechanics.quest.QuestStep;
 import com.ankin.rpgmechanics.quest.network.DismissCompletedQuestPayload;
 import com.ankin.rpgmechanics.quest.network.ToggleTrackQuestPayload;
+import com.ankin.rpgmechanics.classbuild.client.RpgOverviewScreen;
+import com.ankin.rpgmechanics.classbuild.client.ui.RpgHubTab;
+import com.ankin.rpgmechanics.classbuild.client.ui.RpgHubTabBar;
+import com.ankin.rpgmechanics.classbuild.client.ui.RpgUiPanels;
+import com.ankin.rpgmechanics.classbuild.client.ui.RpgUiTheme;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
@@ -42,12 +47,13 @@ public class QuestBookScreen extends Screen {
     @Override
     protected void init() {
         this.panelLeft = (this.width - PANEL_WIDTH) / 2;
-        this.panelTop = (this.height - PANEL_HEIGHT) / 2;
+        this.panelTop = RpgUiTheme.TAB_BAR_H + (this.height - RpgUiTheme.TAB_BAR_H - PANEL_HEIGHT) / 2;
 
         ResourceLocation previous = this.selectedId;
         this.questList = new QuestList(LIST_WIDTH, PANEL_HEIGHT - 28, this.panelTop + 24);
         this.questList.setX(this.panelLeft + 6);
         this.addRenderableWidget(this.questList);
+        RpgHubTabBar.addTo(this::addRenderableWidget, this.width, RpgHubTab.QUESTS);
 
         if (previous != null) {
             this.selectedId = previous;
@@ -96,10 +102,11 @@ public class QuestBookScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.completeHitActive = false;
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        RpgUiPanels.drawFullDim(graphics, this.width, this.height);
+        RpgUiPanels.drawTabBarBg(graphics, this.width);
         super.render(graphics, mouseX, mouseY, partialTick);
 
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, this.panelTop + 8, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, this.title, this.width / 2, this.panelTop + 8, RpgUiTheme.TEXT);
 
         int detailLeft = this.panelLeft + LIST_WIDTH + 14;
         int detailWidth = PANEL_WIDTH - LIST_WIDTH - 24;
@@ -298,5 +305,19 @@ public class QuestBookScreen extends Screen {
                 return Component.literal(this.label);
             }
         }
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == 256) {
+            this.minecraft.setScreen(new RpgOverviewScreen());
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 }

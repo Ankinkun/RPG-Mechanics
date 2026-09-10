@@ -5,7 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "SimpleCriterionTriggerMixin",
-    "AbstractContainerMenuMixin"
+    "AbstractContainerMenuMixin",
+    "InventoryMixin"
   ],
   "client": [
     "client.KeyMappingAccessor",

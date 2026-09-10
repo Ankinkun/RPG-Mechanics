@@ -10,7 +10,7 @@ public final class ClassBuildNetwork {
     }
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1");
+        PayloadRegistrar registrar = event.registrar("3");
 
         registrar.playToServer(
                 ConfirmClassBuildPayload.TYPE,
@@ -21,6 +21,31 @@ public final class ClassBuildNetwork {
                 OpenRpgEquipmentPayload.TYPE,
                 OpenRpgEquipmentPayload.STREAM_CODEC,
                 OpenRpgEquipmentPayload::handle
+        );
+        registrar.playToServer(
+                SelectCharacterPayload.TYPE,
+                SelectCharacterPayload.STREAM_CODEC,
+                SelectCharacterPayload::handle
+        );
+        registrar.playToServer(
+                DeleteCharacterPayload.TYPE,
+                DeleteCharacterPayload.STREAM_CODEC,
+                DeleteCharacterPayload::handle
+        );
+        registrar.playToServer(
+                CastAbilityPayload.TYPE,
+                CastAbilityPayload.STREAM_CODEC,
+                CastAbilityPayload::handle
+        );
+        registrar.playToServer(
+                EquipStowedPayload.TYPE,
+                EquipStowedPayload.STREAM_CODEC,
+                EquipStowedPayload::handle
+        );
+        registrar.playToServer(
+                UnequipSlotPayload.TYPE,
+                UnequipSlotPayload.STREAM_CODEC,
+                UnequipSlotPayload::handle
         );
 
         if (FMLEnvironment.dist == Dist.CLIENT) {

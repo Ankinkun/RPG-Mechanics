@@ -6,17 +6,20 @@ import com.ankin.rpgmechanics.classbuild.ClassBuildState;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public record ConfirmClassBuildPayload(ClassBuildState draft) implements CustomPacketPayload {
+public record ConfirmClassBuildPayload(int slotIndex, ClassBuildState draft) implements CustomPacketPayload {
     public static final Type<ConfirmClassBuildPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(RpgMechanics.MOD_ID, "confirm_class_build"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ConfirmClassBuildPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.VAR_INT,
+            ConfirmClassBuildPayload::slotIndex,
             ClassBuildState.STREAM_CODEC,
             ConfirmClassBuildPayload::draft,
             ConfirmClassBuildPayload::new
@@ -32,7 +35,7 @@ public record ConfirmClassBuildPayload(ClassBuildState draft) implements CustomP
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
-            String error = ClassBuildManager.confirm(player, payload.draft());
+            String error = ClassBuildManager.confirm(player, payload.slotIndex(), payload.draft());
             if (error != null) {
                 player.sendSystemMessage(Component.literal(error));
             }

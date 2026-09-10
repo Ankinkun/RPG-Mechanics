@@ -31,6 +31,7 @@ public final class KeybindManager {
         warnSoftCompat();
         KeybindCatalog.refresh();
         KeybindProfileIO.ensurePackDefaultsSeeded();
+        KeybindTaxonomy.applyIfNeeded();
         profile = KeybindProfileIO.loadMerged();
         applyProfile();
         initialized = true;
@@ -45,6 +46,7 @@ public final class KeybindManager {
     public static void reloadFromDisk() {
         KeybindCatalog.refresh();
         KeybindProfileIO.ensurePackDefaultsSeeded();
+        KeybindTaxonomy.applyIfNeeded();
         profile = KeybindProfileIO.loadMerged();
         applyProfile();
     }

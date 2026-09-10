@@ -78,6 +78,15 @@ public final class KeybindInputEngine {
             KeybindCatalog.refresh();
             for (Map.Entry<String, BindingOverride> entry : profile.bindings().entrySet()) {
                 String bindingName = entry.getKey();
+                // Own-mod KeyMappings use vanilla consumeClick; managing them unbinds to UNKNOWN (-1)
+                // and spams "Invalid key -1". Restore defaults if a prior rebuild already unbound them.
+                if (bindingName.startsWith("key.rpgmechanics.")) {
+                    KeyMapping own = KeybindCatalog.get(bindingName);
+                    if (own != null) {
+                        own.setKeyModifierAndCode(KeyModifier.NONE, own.getDefaultKey());
+                    }
+                    continue;
+                }
                 BindingOverride override = entry.getValue();
                 KeyMapping mapping = KeybindCatalog.get(bindingName);
                 if (mapping == null) {
