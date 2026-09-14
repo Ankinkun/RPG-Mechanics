@@ -885,6 +885,14 @@ Destiny-style **3 character slots** (kit + equipped gear + **stowed bag** per sl
 
 GitHub repo live. Agents bump `mod_version` for every pack jar, tag `vX.Y.Z`, update this Part 2. Rules in Part 1 §23.
 
+### F. Public docs layout
+
+- [`README.md`](../README.md) — short overview + install + links  
+- [`PLAYER.md`](PLAYER.md) — players  
+- [`PACK.md`](PACK.md) — pack makers / operators  
+- [`docs/README.md`](README.md) — index  
+- This file + [`KEYBINDS.md`](KEYBINDS.md) — contributors / agents (not player docs)
+
 ---
 
 ## Locked Rules (Do Not Violate)
