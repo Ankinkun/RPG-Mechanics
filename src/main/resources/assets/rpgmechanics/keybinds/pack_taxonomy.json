@@ -35,8 +35,7 @@
         "key.chat",
         "key.shouldersurfing.swap_shoulder",
         "key.rpgmechanics.open_quest_book",
-        "gui.xaero_open_map",
-        "key.epicfight.skill_gui"
+        "gui.xaero_open_map"
       ]
     }
   ],
@@ -59,8 +58,7 @@
     "key.chat",
     "key.shouldersurfing.swap_shoulder",
     "key.rpgmechanics.open_quest_book",
-    "gui.xaero_open_map",
-    "key.epicfight.skill_gui"
+    "gui.xaero_open_map"
   ],
   "forceDisablePrefixes": [
     "key.irons_spellbooks.",

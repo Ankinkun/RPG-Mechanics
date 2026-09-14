@@ -29,7 +29,7 @@ Do this before writing code:
 4. **Versions** — confirm in `gradle.properties`:
    - `minecraft_version=1.21.1`
    - `neo_version=21.1.250`
-   - `mod_version=0.1.7` (bump before every pack jar — see §23)
+   - `mod_version=0.1.8` (bump before every pack jar — see §23)
 5. **Compile**
    ```powershell
    .\gradlew.bat compileJava
@@ -822,9 +822,9 @@ You **must not**:
 
 # PART 2 — Project Checkpoint (RPG Mechanics)
 
-**Checkpoint date:** 2026-09-10  
-**Mod version:** `0.1.7` (tag `v0.1.7`) — Destiny hub, stowed inventory, taxonomy v4, Map/EF/Quit polish  
-**Status:** Quests + keybinds + world + **classbuild** (3 character slots, Darkness DD, ISS spellbook, LoL combat HUD, stowed bag, Map tab). Controlling is NeoForge-**discouraged**. **Do not restart architecture.**  
+**Checkpoint date:** 2026-09-14  
+**Mod version:** `0.1.8` (tag `v0.1.8`) — Class UI school themes / book fan, Skills tab removed, always-sprint, gear F-destroy  
+**Status:** Quests + keybinds + world + **classbuild** (3 character slots, Darkness DD, ISS spellbook, LoL combat HUD, stowed bag, Map tab). No Skills hub tab (EF dodge/guard only). Controlling is NeoForge-**discouraged**. **Do not restart architecture.**  
 **Git:** `main` @ https://github.com/Ankinkun/RPG-Mechanics.git
 
 ---
@@ -844,7 +844,7 @@ You **must not**:
 | **NeoForge** | 21.1.250 (`gradle.properties` → `neo_version`) |
 | **Java** | 21 |
 | **Build** | ModDevGradle (`build.gradle`) |
-| **Version** | `0.1.7` (`gradle.properties` → `mod_version`) |
+| **Version** | `0.1.8` (`gradle.properties` → `mod_version`) |
 | **Metadata** | `src/main/templates/META-INF/neoforge.mods.toml` |
 | **Mixins** | `src/main/resources/rpgmechanics.mixins.json` |
 
@@ -877,7 +877,7 @@ RPG terrain protection (break/place/grief cancelled; OP/allowlist builders). Sof
 
 ### D. Class / buildcrafting (server + client + ISS)
 
-Destiny-style **3 character slots** (kit + equipped gear + **stowed bag** per slot). **Title-screen** character select → loads campaign world (`CLIENT classbuild.campaignWorldName`, empty = first save). Create = role/kit (v1 Darkness DD only; Tank/Support Coming Soon) + starter leather / stone sword / shield. Active character → Adventure + managed Curios spellbook (4 locked spells) + Epic Fight roll+guard + forced combat mode. **Inventory hub** (Overview doll / Gear Destiny bag / Class / Quests / **Map** (Xaero overlay) / Skills + Settings cog + Quit → character select); Esc → Overview (world does **not** pause); inventory key **TAB**. Pickups go straight to stowed (never hotbar). Soft `compileOnly` on Iron Spells + Curios + Epic Fight + Xaero World Map (jars in `Required Dependencies/` for local + CI compile).
+Destiny-style **3 character slots** (kit + equipped gear + **stowed bag** per slot). **Title-screen** character select → loads campaign world (`CLIENT classbuild.campaignWorldName`, empty = first save). Create = role/kit (v1 Darkness DD only; Tank/Support Coming Soon) + starter leather / stone sword / shield. Active character → Adventure + managed Curios spellbook (4 locked spells, **learned on apply**) + **base max mana 650** + Epic Fight roll+guard + forced combat mode (**no** Skills hub / EF skill editor). **Inventory hub** (Overview doll / Gear Destiny bag / Class themed skill UI / Quests / **Map** (Xaero overlay) + Settings cog + Quit → character select); Esc → Overview (world does **not** pause); inventory key **TAB**. Gear: **vanilla item tooltips**; **F mark / hold-F destroy** (multi-select confirm). **Always-sprint** while moving forward (crouch wins). Pickups go straight to stowed (never hotbar). Soft `compileOnly` on Iron Spells + Curios + Epic Fight + Xaero World Map (jars in `Required Dependencies/` for local + CI compile).
 
 **TODO campaign:** later — per-character worlds / shared campaign state; new character → new world. Dev now: all characters load the same configured campaign save.
 
@@ -908,7 +908,7 @@ GitHub repo live. Agents bump `mod_version` for every pack jar, tag `vX.Y.Z`, up
 2. **Controlling** is `discouraged` in `neoforge.mods.toml` — launch warning; remove Controlling for our menu to win cleanly (`NewKeyBindsScreen` also listens to `ScreenEvent.Opening`).
 3. **Escape while binding** unbinds that slot (empty chords) — does **not** restore default. Reset restores `defaultKey`.
 4. **Display names** — resolve live via `KeybindCatalog` / `I18n`; do not trust baked JSON `title` alone (early seed often wrote raw ids).
-5. Seeded `pack_defaults.json` lists every `KeyMapping`; **bundled taxonomy** (`assets/rpgmechanics/keybinds/pack_taxonomy.json`, **v4** via `config/.../taxonomy.version`) rewrites categories to **Movement / Combat / Inventory** allowlist and **force-disables** the rest (`visible=false` + `enabled=false` + empty chords; ISS + hotbar prefixes). Defaults: inventory **TAB**, Xaero map **M**, EF skill GUI **K**. Profile entries with `enabled=true` are **managed** by `KeybindInputEngine` except `key.rpgmechanics.*` (vanilla consumeClick). Be careful changing `BindingOverride.isManaged()`.
+5. Seeded `pack_defaults.json` lists every `KeyMapping`; **bundled taxonomy** (`assets/rpgmechanics/keybinds/pack_taxonomy.json`, **v4** via `config/.../taxonomy.version`) rewrites categories to **Movement / Combat / Inventory** allowlist and **force-disables** the rest (`visible=false` + `enabled=false` + empty chords; ISS + hotbar prefixes). Defaults: inventory **TAB**, Xaero map **M**. No EF skill GUI key. Profile entries with `enabled=true` are **managed** by `KeybindInputEngine` except `key.rpgmechanics.*` (vanilla consumeClick). Be careful changing `BindingOverride.isManaged()`.
 
 ### Process
 
@@ -1115,6 +1115,7 @@ src/main/templates/META-INF/neoforge.mods.toml   # Controlling = discouraged
 | CLIENT `classbuild.campaignWorldName` | `""` | Save folder after title select; empty = first save |
 | `classbuild.enabled` | `true` | Character select + equipment + managed spellbooks |
 | `classbuild.spellLevel` | `3` | Level written into managed book slots |
+| `classbuild.baseMaxMana` | `650` | Target ISS `MAX_MANA` on loadout apply |
 | `classbuild.forceAdventure` | `true` | Adventure mode on confirm |
 
 **Client** `config/rpgmechanics-client.toml`:
@@ -1135,10 +1136,12 @@ src/main/templates/META-INF/neoforge.mods.toml   # Controlling = discouraged
 4. Inventory hub: Esc → Overview (unpaused); top bar tabs + Settings cog + **Quit → disconnect → Character Select** (not `Minecraft.stop()`).
 5. Tank/Support + other element tracks + passives are out of scope until designed.
 6. Iron Spells / Curios via `IronSpellsSoft` / `IronSpellsClientSoft`; Epic Fight via `EpicFightSoft` / `EpicFightClientSoft` reflection (no hard crash if jars missing).
-7. ISS `addSpellAtIndex(spell, level, index, locked)` — level before index.
+7. ISS `addSpellAtIndex(spell, level, index, locked)` — level before index; also `SyncedSpellData.learnSpell` for kit spells (Eldritch requires learning).
 8. OP helpers: `/rpgmechanics class reset|select|apply|delete|info`
-9. Gear: LMB equip from stowed, RMB unequip to stowed; Overview shows 6-slot doll; bag = stowed ∪ equipped (outlined).
-10. **TODO campaign:** per-character saves / new-character world — not implemented yet.
+9. Gear: LMB equip from stowed, RMB unequip to stowed; Overview/Gear show vanilla ItemStack tooltips on hover; bag = stowed ∪ equipped (outlined).
+10. Class tab: large spellbook hero (school theme Blood/Ender/Eldritch with color crossfade); hover fans books/abilities; **kit changes apply instantly** (no Apply button); compact 6-slot Fragments stub (placeholder).
+11. **TODO campaign:** per-character saves / new-character world — not implemented yet.
+12. **TODO fragments:** 6 equippable fragment slots to enhance spells/subclass (with armor/weapon rework).
 
 ---
 
@@ -1147,13 +1150,14 @@ src/main/templates/META-INF/neoforge.mods.toml   # Controlling = discouraged
 ### Class build
 
 1. Boot → Character Select (title). Create/Select → loads campaign world (`campaignWorldName` or first save).
-2. Create empty slot → DD kit → Confirm → Adventure + Curios spellbook with **4** spells + leather/sword/shield; EF roll+guard when Epic Fight present.
-3. **TAB** → Gear Destiny bag (doll + owned grid); Esc → Overview doll (world unpaused); cog → Options; **Quit → world unloads → Character Select**.
-4. Class / Quests / **Map** (Xaero + hub bar overlay) / Skills tabs; J opens Quests; **M** opens Map.
-5. Combat HUD: HP / QERF abilities with CDs / mana; vanilla hotbar + ISS mana/spell bar hidden; **no hotbar scroll** (selected pinned to 0); creative keeps vanilla inventory.
-6. Controls shows **Movement / Combat / Inventory** only (taxonomy **v4**; unused binds unbound).
-7. Gear LMB/RMB equip rules; ground pickups → stowed (not hotbar); Inscription Table / Curios unequip cannot change loadout.
-8. Without ISS/EF/Xaero jars: game still boots; class UI works; book/HUD mana / Skills / Map no-op with hint.
+2. Create empty slot → DD kit → Confirm → Adventure + Curios spellbook with **4** spells (**learned**, incl. Eldritch) + leather/sword/shield; **max mana 650**; EF roll+guard when Epic Fight present.
+3. **TAB** → Gear Destiny bag (doll + owned grid); **hover items → vanilla tooltips**; Esc → Overview doll (world unpaused); cog → Options; **Quit → world unloads → Character Select**.
+4. Class / Quests / **Map** (Xaero + hub bar overlay) tabs; J opens Quests; **M** opens Map.
+5. Class tab: large spellbook hero; hover fans books/abilities (dark accents); theme color fade on book change; **instant kit apply** (no Apply); compact Fragments stub.
+6. Combat HUD: HP / QERF abilities with CDs / mana; vanilla hotbar + ISS mana/spell bar hidden; **no hotbar scroll** (selected pinned to 0); creative keeps vanilla inventory.
+7. Controls shows **Movement / Combat / Inventory** only (taxonomy **v4**; unused binds unbound).
+8. Gear LMB/RMB equip rules; ground pickups → stowed (not hotbar); Inscription Table / Curios unequip cannot change loadout.
+9. Without ISS/EF/Xaero jars: game still boots; class UI works; book/HUD mana / Map no-op with hint.
 
 ### Quests
 
@@ -1199,7 +1203,7 @@ Read docs/AGENT_HANDOFF.md fully:
 Also read docs/KEYBINDS.md if touching controls.
 
 Git: https://github.com/Ankinkun/RPG-Mechanics.git (branch main).
-Version source of truth: gradle.properties mod_version (currently 0.1.7 / tag v0.1.7).
+Version source of truth: gradle.properties mod_version (currently 0.1.8 / tag v0.1.8).
 Every pack jar: bump mod_version → build → rpgmechanics-{version}.jar → tag vX.Y.Z.
 Do not commit/push unless the user asks. Never invent APIs. Do not restart architecture.
 
@@ -1219,14 +1223,17 @@ World (v1+): protection + RD-anchored fog border; Photon fogEnd patch in extras/
 CLIENT world.borderShaderFallbackWall default false.
 
 Classbuild (v1+): title Character Select → campaign world; 3 slots; Darkness DD kit;
-managed 4-slot ISS spellbook; Destiny inventory hub (Esc=Overview, unpaused, TAB inventory);
-Map tab overlays Xaero; LoL combat HUD; key taxonomy v4; stowed pickups + Quit→select;
-EF combat mode forced; TODO campaign per-char worlds.
+managed 4-slot ISS spellbook (learn on apply, baseMaxMana 650); Destiny inventory hub
+(Esc=Overview, unpaused, TAB inventory, vanilla gear tooltips);
+Class tab school themes + spinning 3D book fan (selected stays center);
+no Skills hub tab (EF roll+guard only); always-sprint; gear F mark / hold-F destroy;
+key taxonomy v4; stowed pickups + Quit→select; EF combat mode forced;
+TODO campaign per-char worlds.
 Extend classbuild/ — do not restart.
 
-Working: quests; keybinds taxonomy v4; world; classbuild hub+stowed+map (0.1.7).
+Working: quests; keybinds taxonomy v4; world; classbuild hub+stowed+map+class UI+F-destroy.
 
-Next (pick with user): playtest; settings overhaul (auto-equip / force-equipped); Tank/Support later.
+Next (pick with user): playtest Class UI / mana; settings overhaul; Tank/Support later.
 Use .\gradlew.bat compileJava / build / runClient.
 ```
 

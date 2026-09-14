@@ -40,6 +40,7 @@ public final class RpgMechanicsConfig {
 
         public final ModConfigSpec.BooleanValue classbuildEnabled;
         public final ModConfigSpec.IntValue classbuildSpellLevel;
+        public final ModConfigSpec.IntValue classbuildBaseMaxMana;
         public final ModConfigSpec.BooleanValue classbuildForceAdventure;
 
         private Server(ModConfigSpec.Builder builder) {
@@ -115,6 +116,9 @@ public final class RpgMechanicsConfig {
             classbuildSpellLevel = builder
                     .comment("Spell level written into the managed 4-slot spellbook.")
                     .defineInRange("spellLevel", 3, 1, 10);
+            classbuildBaseMaxMana = builder
+                    .comment("Target Iron Spells MAX_MANA when a class loadout is applied.")
+                    .defineInRange("baseMaxMana", 650, 1, 1_000_000);
             classbuildForceAdventure = builder
                     .comment("Set Adventure mode when a class build is confirmed.")
                     .define("forceAdventure", true);
@@ -125,6 +129,7 @@ public final class RpgMechanicsConfig {
     public static final class Client {
         public final ModConfigSpec.BooleanValue keybindAuthoringMode;
         public final ModConfigSpec.BooleanValue borderShaderFallbackWall;
+        public final ModConfigSpec.BooleanValue alwaysSprintWhenMoving;
         public final ModConfigSpec.BooleanValue classbuildCombatHud;
         public final ModConfigSpec.ConfigValue<String> classbuildCampaignWorldName;
 
@@ -151,6 +156,9 @@ public final class RpgMechanicsConfig {
             builder.pop();
 
             builder.push("classbuild");
+            alwaysSprintWhenMoving = builder
+                    .comment("Automatically sprint while moving forward. Sneaking always takes priority.")
+                    .define("alwaysSprintWhenMoving", true);
             classbuildCombatHud = builder
                     .comment(
                             "LoL-style combat HUD: HP + 4 ability icons with cooldowns + mana.",

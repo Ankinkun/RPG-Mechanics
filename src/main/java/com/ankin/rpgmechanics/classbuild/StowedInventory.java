@@ -1,7 +1,10 @@
 package com.ankin.rpgmechanics.classbuild;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.ankin.rpgmechanics.classbuild.integration.EpicFightSoft;
 import com.ankin.rpgmechanics.registry.ModAttachments;
@@ -17,6 +20,7 @@ import net.minecraft.world.item.ShieldItem;
  */
 public final class StowedInventory {
     private static final ThreadLocal<Boolean> APPLYING = ThreadLocal.withInitial(() -> false);
+    public static final int MAX_DISCARD_BATCH = 64;
 
     private StowedInventory() {
     }
@@ -155,6 +159,45 @@ public final class StowedInventory {
         ClassBuildManager.setRoster(player, roster.withSlot(active, slot));
         ClassBuildManager.restoreEquipmentToPlayer(player);
         return null;
+    }
+
+    public static void discard(ServerPlayer player, List<Integer> stowedIndices, List<Integer> gearSlotOrdinals) {
+        CharacterRoster roster = ClassBuildManager.getRoster(player);
+        if (!roster.hasActive()) {
+            return;
+        }
+        int remaining = MAX_DISCARD_BATCH;
+        Set<Integer> stowed = new LinkedHashSet<>();
+        for (int index : stowedIndices) {
+            if (remaining-- <= 0) {
+                break;
+            }
+            stowed.add(index);
+        }
+        Set<GearSlot> gear = new LinkedHashSet<>();
+        for (int ordinal : gearSlotOrdinals) {
+            if (remaining-- <= 0) {
+                break;
+            }
+            GearSlot slot = GearSlot.fromOrdinalSafe(ordinal);
+            if (slot != null) {
+                gear.add(slot);
+            }
+        }
+
+        int active = roster.activeSlot();
+        CharacterSlot character = roster.slot(active);
+        List<ItemStack> nextStowed = new ArrayList<>(character.stowed());
+        stowed.stream()
+                .filter(index -> index >= 0 && index < nextStowed.size())
+                .sorted(Comparator.reverseOrder())
+                .forEach(index -> nextStowed.remove((int) index));
+        for (GearSlot slot : gear) {
+            character = character.withGear(slot, ItemStack.EMPTY);
+        }
+        character = character.withStowed(nextStowed);
+        ClassBuildManager.setRoster(player, roster.withSlot(active, character));
+        ClassBuildManager.restoreEquipmentToPlayer(player);
     }
 
     /** Sweep hotbar 1–8 + storage 9–35 into stowed and clear them. */

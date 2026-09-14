@@ -80,16 +80,12 @@ public final class KeybindTaxonomy {
                         .withEnabled(true)
                         .withCustomCategory(cat.isEmpty() ? current.customCategory() : Optional.of(cat));
 
-                // Pack defaults we own: inventory = TAB, world map = M, skill GUI = K.
+                // Pack defaults we own: inventory = TAB, world map = M.
                 String forcedDefault = null;
                 if ("key.inventory".equals(name)) {
                     forcedDefault = "key.keyboard.tab";
                 } else if ("gui.xaero_open_map".equals(name)) {
                     forcedDefault = "key.keyboard.m";
-                } else if ("key.epicfight.skill_gui".equals(name)
-                        && (next.chords().isEmpty()
-                        || next.defaultKey().map(k -> k.isBlank() || "key.keyboard.unknown".equals(k)).orElse(true))) {
-                    forcedDefault = "key.keyboard.k";
                 }
 
                 if (forcedDefault != null) {

@@ -78,6 +78,21 @@ public class RpgOverviewScreen extends Screen {
                 this.height - 28,
                 RpgUiTheme.TEXT_MUTED
         );
+
+        RpgGearUi.renderHoveredTooltip(
+                graphics,
+                this.font,
+                character,
+                this.dollLeft,
+                this.dollTop,
+                null,
+                0,
+                0,
+                0,
+                0,
+                mouseX,
+                mouseY
+        );
     }
 
     @Override

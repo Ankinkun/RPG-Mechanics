@@ -6,15 +6,20 @@ import com.ankin.rpgmechanics.RpgMechanics;
 import com.ankin.rpgmechanics.classbuild.ClassBuildCatalog;
 import com.ankin.rpgmechanics.classbuild.ClassBuildState;
 
+import io.redspace.ironsspellbooks.api.magic.MagicData;
+import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainerMutable;
 import io.redspace.ironsspellbooks.api.spells.SpellData;
 import io.redspace.ironsspellbooks.api.util.Utils;
+import io.redspace.ironsspellbooks.capabilities.magic.SyncedSpellData;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -25,6 +30,9 @@ import net.minecraft.world.item.Items;
 public final class IronSpellsBridge {
     public static final ThreadLocal<Boolean> APPLYING = ThreadLocal.withInitial(() -> false);
 
+    private static final ResourceLocation BASE_MANA_MODIFIER =
+            ResourceLocation.fromNamespaceAndPath(RpgMechanics.MOD_ID, "classbuild_base_mana");
+
     private IronSpellsBridge() {
     }
 
@@ -32,7 +40,7 @@ public final class IronSpellsBridge {
         return IronSpellsSoft.isAvailable();
     }
 
-    public static void apply(ServerPlayer player, ClassBuildState build, int spellLevel) {
+    public static void apply(ServerPlayer player, ClassBuildState build, int spellLevel, int baseMaxMana) {
         if (!isAvailable() || !build.confirmed()) {
             return;
         }
@@ -66,6 +74,45 @@ public final class IronSpellsBridge {
         } finally {
             APPLYING.set(false);
         }
+
+        learnKitSpells(player, spells);
+        applyBaseMaxMana(player, baseMaxMana);
+    }
+
+    private static void learnKitSpells(ServerPlayer player, List<ResourceLocation> spells) {
+        SyncedSpellData synced = MagicData.getPlayerMagicData(player).getSyncedData();
+        boolean learnedAny = false;
+        for (ResourceLocation spellId : spells) {
+            AbstractSpell spell = SpellRegistry.getSpell(spellId);
+            if (spell == null || spell == SpellRegistry.none()) {
+                continue;
+            }
+            if (!synced.isSpellLearned(spell)) {
+                synced.learnSpell(spell, true);
+                learnedAny = true;
+            }
+        }
+        if (learnedAny) {
+            synced.doSync();
+        }
+    }
+
+    private static void applyBaseMaxMana(ServerPlayer player, int baseMaxMana) {
+        AttributeInstance attr = player.getAttribute(AttributeRegistry.MAX_MANA);
+        if (attr == null) {
+            return;
+        }
+        attr.removeModifier(BASE_MANA_MODIFIER);
+        double amount = baseMaxMana - attr.getBaseValue();
+        if (Math.abs(amount) > 0.001) {
+            attr.addPermanentModifier(new AttributeModifier(
+                    BASE_MANA_MODIFIER,
+                    amount,
+                    AttributeModifier.Operation.ADD_VALUE
+            ));
+        }
+        MagicData magic = MagicData.getPlayerMagicData(player);
+        magic.setMana((float) attr.getValue());
     }
 
     public static boolean isManaged(ItemStack stack) {
@@ -96,6 +143,7 @@ public final class IronSpellsBridge {
             return false;
         }
         List<ResourceLocation> expected = build.orderedSpells();
+        SyncedSpellData synced = MagicData.getPlayerMagicData(player).getSyncedData();
         for (int i = 0; i < expected.size(); i++) {
             SpellData data = container.getSpellAtIndex(i);
             if (data == null || data.getSpell() == null) {
@@ -109,13 +157,22 @@ public final class IronSpellsBridge {
             if (data.getLevel() != level || !data.isLocked()) {
                 return false;
             }
+            if (spell.requiresLearning() && !synced.isSpellLearned(spell)) {
+                return false;
+            }
         }
-        return true;
+        AttributeInstance attr = player.getAttribute(AttributeRegistry.MAX_MANA);
+        // Mana target is applied every apply(); skip strict match so gear mods don't force reconcile loops.
+        return attr != null;
     }
 
-    public static void reconcile(ServerPlayer player, ClassBuildState build, int spellLevel) {
+    public static void reconcile(ServerPlayer player, ClassBuildState build, int spellLevel, int baseMaxMana) {
         if (!matchesEquipped(player, build, spellLevel)) {
-            apply(player, build, spellLevel);
+            apply(player, build, spellLevel, baseMaxMana);
+        } else {
+            // Keep mana target + learning fresh even when book already matches.
+            learnKitSpells(player, build.orderedSpells());
+            applyBaseMaxMana(player, baseMaxMana);
         }
     }
 

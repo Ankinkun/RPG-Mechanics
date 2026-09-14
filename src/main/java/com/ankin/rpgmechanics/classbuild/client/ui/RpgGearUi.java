@@ -2,6 +2,7 @@ package com.ankin.rpgmechanics.classbuild.client.ui;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import com.ankin.rpgmechanics.classbuild.CharacterSlot;
 import com.ankin.rpgmechanics.classbuild.GearSlot;
@@ -121,7 +122,8 @@ public final class RpgGearUi {
             int bagLeft,
             int bagTop,
             int rowsVisible,
-            int scrollRow
+            int scrollRow,
+            Predicate<BagCell> highlighted
     ) {
         int max = Math.min(cells.size(), (scrollRow + rowsVisible) * BAG_COLS);
         for (int index = scrollRow * BAG_COLS; index < max; index++) {
@@ -133,6 +135,9 @@ public final class RpgGearUi {
             BagCell cell = cells.get(index);
             graphics.fill(x, y, x + SLOT, y + SLOT, 0xFF1A1C24);
             graphics.renderOutline(x, y, SLOT, SLOT, cell.equipped() ? RpgUiTheme.ACCENT : RpgUiTheme.PANEL_EDGE);
+            if (highlighted.test(cell)) {
+                graphics.renderOutline(x - 1, y - 1, SLOT + 2, SLOT + 2, RpgUiTheme.ACCENT);
+            }
             graphics.renderItem(cell.stack(), x + 3, y + 3);
             graphics.renderItemDecorations(font, cell.stack(), x + 3, y + 3);
         }
@@ -176,6 +181,38 @@ public final class RpgGearUi {
             PacketDistributor.sendToServer(new EquipStowedPayload(cell.stowedIndex()));
         } else if (button == 1 && cell.equipped() && cell.gearSlot() != null) {
             PacketDistributor.sendToServer(new UnequipSlotPayload(cell.gearSlot().ordinal()));
+        }
+    }
+
+    /** Vanilla-style ItemStack tooltip for doll (and optional bag) under the cursor. */
+    public static void renderHoveredTooltip(
+            GuiGraphics graphics,
+            Font font,
+            CharacterSlot character,
+            int dollLeft,
+            int dollTop,
+            List<BagCell> bagOrNull,
+            int bagLeft,
+            int bagTop,
+            int rowsVisible,
+            int scrollRow,
+            int mouseX,
+            int mouseY
+    ) {
+        GearSlot slot = hitEquipSlot(dollLeft, dollTop, mouseX, mouseY);
+        if (slot != null) {
+            ItemStack stack = character.get(slot);
+            if (!stack.isEmpty()) {
+                graphics.renderTooltip(font, stack, mouseX, mouseY);
+                return;
+            }
+        }
+        if (bagOrNull == null) {
+            return;
+        }
+        BagCell cell = hitBag(bagOrNull, bagLeft, bagTop, rowsVisible, scrollRow, mouseX, mouseY);
+        if (cell != null && !cell.stack().isEmpty()) {
+            graphics.renderTooltip(font, cell.stack(), mouseX, mouseY);
         }
     }
 

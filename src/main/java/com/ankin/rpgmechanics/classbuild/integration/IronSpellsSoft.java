@@ -38,17 +38,39 @@ public final class IronSpellsSoft {
     }
 
     public static void apply(ServerPlayer player, ClassBuildState build, int spellLevel) {
+        apply(player, build, spellLevel, 650);
+    }
+
+    public static void apply(ServerPlayer player, ClassBuildState build, int spellLevel, int baseMaxMana) {
         if (!isAvailable()) {
             return;
         }
-        invoke("apply", new Class<?>[] {ServerPlayer.class, ClassBuildState.class, int.class}, player, build, spellLevel);
+        invoke(
+                "apply",
+                new Class<?>[] {ServerPlayer.class, ClassBuildState.class, int.class, int.class},
+                player,
+                build,
+                spellLevel,
+                baseMaxMana
+        );
     }
 
     public static void reconcile(ServerPlayer player, ClassBuildState build, int spellLevel) {
+        reconcile(player, build, spellLevel, 650);
+    }
+
+    public static void reconcile(ServerPlayer player, ClassBuildState build, int spellLevel, int baseMaxMana) {
         if (!isAvailable()) {
             return;
         }
-        invoke("reconcile", new Class<?>[] {ServerPlayer.class, ClassBuildState.class, int.class}, player, build, spellLevel);
+        invoke(
+                "reconcile",
+                new Class<?>[] {ServerPlayer.class, ClassBuildState.class, int.class, int.class},
+                player,
+                build,
+                spellLevel,
+                baseMaxMana
+        );
     }
 
     public static void quickCast(ServerPlayer player, int spellIndex) {

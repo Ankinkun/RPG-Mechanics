@@ -40,6 +40,17 @@ public final class ClassBuildManager {
         }
     }
 
+    public static int baseMaxMana() {
+        if (!RpgMechanicsConfig.SERVER_SPEC.isLoaded()) {
+            return 650;
+        }
+        try {
+            return RpgMechanicsConfig.SERVER.classbuildBaseMaxMana.get();
+        } catch (IllegalStateException exception) {
+            return 650;
+        }
+    }
+
     public static boolean forceAdventure() {
         if (!RpgMechanicsConfig.SERVER_SPEC.isLoaded()) {
             return true;
@@ -193,7 +204,7 @@ public final class ClassBuildManager {
         if (!state.confirmed()) {
             return;
         }
-        IronSpellsSoft.apply(player, state, spellLevel());
+        IronSpellsSoft.apply(player, state, spellLevel(), baseMaxMana());
         EpicFightSoft.grantStarterSkills(player);
         EpicFightSoft.ensureCombatMode(player);
     }
@@ -203,7 +214,7 @@ public final class ClassBuildManager {
         if (!state.confirmed()) {
             return;
         }
-        IronSpellsSoft.reconcile(player, state, spellLevel());
+        IronSpellsSoft.reconcile(player, state, spellLevel(), baseMaxMana());
         saveEquipmentFromPlayer(player);
     }
 

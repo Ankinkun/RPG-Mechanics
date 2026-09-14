@@ -43,6 +43,11 @@ public final class ClassBuildNetwork {
                 EquipStowedPayload::handle
         );
         registrar.playToServer(
+                DiscardItemsPayload.TYPE,
+                DiscardItemsPayload.STREAM_CODEC,
+                DiscardItemsPayload::handle
+        );
+        registrar.playToServer(
                 UnequipSlotPayload.TYPE,
                 UnequipSlotPayload.STREAM_CODEC,
                 UnequipSlotPayload::handle

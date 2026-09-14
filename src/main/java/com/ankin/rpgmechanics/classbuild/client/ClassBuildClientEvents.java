@@ -2,7 +2,6 @@ package com.ankin.rpgmechanics.classbuild.client;
 
 import com.ankin.rpgmechanics.RpgMechanics;
 import com.ankin.rpgmechanics.classbuild.client.ui.RpgHubTabBar;
-import com.ankin.rpgmechanics.classbuild.client.ui.RpgHubTabBarSkillsTick;
 import com.ankin.rpgmechanics.classbuild.client.ui.RpgUiPanels;
 import com.ankin.rpgmechanics.classbuild.integration.EpicFightClientSoft;
 import com.ankin.rpgmechanics.classbuild.integration.XaeroWorldMapClientSoft;
@@ -111,8 +110,6 @@ public final class ClassBuildClientEvents {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
-        RpgHubTabBarSkillsTick.tick();
-
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player != null && ClassBuildClientPayloadHandlers.hasActiveCharacter()) {
             EpicFightClientSoft.ensureCombatMode();

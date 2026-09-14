@@ -7,8 +7,7 @@ public enum RpgHubTab {
     GEAR("screen.rpgmechanics.hub.gear"),
     CLASS("screen.rpgmechanics.hub.class"),
     QUESTS("screen.rpgmechanics.hub.quests"),
-    MAP("screen.rpgmechanics.hub.map"),
-    SKILLS("screen.rpgmechanics.hub.skills");
+    MAP("screen.rpgmechanics.hub.map");
 
     private final String langKey;
 

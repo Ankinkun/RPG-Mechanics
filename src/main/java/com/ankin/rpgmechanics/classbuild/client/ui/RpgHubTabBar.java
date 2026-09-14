@@ -8,7 +8,6 @@ import com.ankin.rpgmechanics.classbuild.client.ClassEditScreen;
 import com.ankin.rpgmechanics.classbuild.client.RpgEquipmentScreen;
 import com.ankin.rpgmechanics.classbuild.client.RpgOverviewScreen;
 import com.ankin.rpgmechanics.classbuild.client.TitleSelectPending;
-import com.ankin.rpgmechanics.classbuild.integration.EpicFightClientSoft;
 import com.ankin.rpgmechanics.classbuild.integration.XaeroWorldMapClientSoft;
 import com.ankin.rpgmechanics.quest.client.QuestBookScreen;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -27,7 +26,6 @@ import net.neoforged.fml.ModList;
  * Shared Destiny-style top bar: content tabs left, cog + Quit far right.
  */
 public final class RpgHubTabBar {
-    private static boolean skillsOpenWarned;
     private static boolean mapOpenWarned;
 
     private RpgHubTabBar() {
@@ -71,7 +69,6 @@ public final class RpgHubTabBar {
             case CLASS -> minecraft.setScreen(new ClassEditScreen());
             case QUESTS -> minecraft.setScreen(new QuestBookScreen());
             case MAP -> openXaeroMap();
-            case SKILLS -> openEpicFightSkills();
         }
     }
 
@@ -83,7 +80,6 @@ public final class RpgHubTabBar {
             case CLASS -> new ClassEditScreen();
             case QUESTS -> new QuestBookScreen();
             case MAP -> new RpgOverviewScreen();
-            case SKILLS -> new RpgOverviewScreen();
         };
         minecraft.setScreen(new OptionsScreen(returnTo, minecraft.options));
     }
@@ -147,19 +143,6 @@ public final class RpgHubTabBar {
         hintMapFailed(minecraft, "gui.xaero_open_map binding missing");
     }
 
-    private static void openEpicFightSkills() {
-        Minecraft minecraft = Minecraft.getInstance();
-        minecraft.setScreen(null);
-        if (EpicFightClientSoft.openSkillEditScreen()) {
-            return;
-        }
-        if (!ModList.get().isLoaded("epicfight")) {
-            hintSkillsFailed(minecraft, "Epic Fight is not loaded");
-            return;
-        }
-        RpgHubTabBarSkillsTick.request();
-    }
-
     static void hintMapFailed(Minecraft minecraft, String detail) {
         if (!mapOpenWarned) {
             mapOpenWarned = true;
@@ -168,20 +151,6 @@ public final class RpgHubTabBar {
         if (minecraft.player != null) {
             minecraft.player.displayClientMessage(
                     Component.translatable("screen.rpgmechanics.hub.map_failed"),
-                    true
-            );
-        }
-        minecraft.setScreen(new RpgOverviewScreen());
-    }
-
-    static void hintSkillsFailed(Minecraft minecraft, String detail) {
-        if (!skillsOpenWarned) {
-            skillsOpenWarned = true;
-            RpgMechanics.LOGGER.warn("Failed to open Epic Fight skill GUI: {}", detail);
-        }
-        if (minecraft.player != null) {
-            minecraft.player.displayClientMessage(
-                    Component.translatable("screen.rpgmechanics.hub.skills_failed"),
                     true
             );
         }
